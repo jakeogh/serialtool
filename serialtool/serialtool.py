@@ -92,8 +92,9 @@ def wait_for_serial_queue(
 
 
 def pick_serial_port():
-    ftdi_devices = ["US232R"]
+    ftdi_devices = ["US232R", "USB-Serial Controller"]
     ports = list_ports.comports()
+    # ic(ports)
     for port in ports:
         port_str = str(port)
         ic(port_str)
