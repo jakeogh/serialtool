@@ -31,11 +31,11 @@ from queue import Empty
 import attr
 import click
 import serial
+from asserttool import ic
 from clicktool import click_add_options
 from clicktool import click_global_options
 from cycloidal_client.command_dict import COMMAND_DICT
 from cycloidal_client.exceptions import SerialNoResponseError
-from icecream import ic
 from serial.tools import list_ports
 
 # from contextlib import ExitStack
@@ -67,13 +67,14 @@ def generate_serial_port_help():
 def lookup_two_byte_command_name(two_bytes: bytes):
     assert isinstance(two_bytes, bytes)
     two_bytes_str = two_bytes.split(b"0x")[-1].decode("utf8")
-    for key in COMMAND_DICT.keys():
-        value = COMMAND_DICT[key]
+    for key, value in COMMAND_DICT.items():
+        # value = COMMAND_DICT[key]
         value_hex_str = value.split("0x")[-1]
         value_bytes = bytearray.fromhex(value_hex_str)
         value_bytes_str = value_bytes.decode("utf8")
         if two_bytes_str == value_bytes_str:
             return key
+    raise ValueError(two_bytes)
 
 
 def wait_for_serial_queue(
@@ -134,14 +135,14 @@ class SerialQueue:
     # https://pyserial.readthedocs.io/en/latest/pyserial_api.html
     rx_queue: Queue
     tx_queue: Queue
-    verbose: bool | int | float
     serial_data_dir: Path
     log_serial_data: bool
     ready_signal: str
     serial_port: str
     serial_baud_rate: int = 460800
     default_timeout: float = 0.7
-    hardware_buffer_size = 4096
+    hardware_buffer_size: int = 4096
+    verbose: bool | int | float = False
 
     def listen_serial(self):
         if not self.serial_port:
@@ -232,6 +233,9 @@ class SerialQueue:
                         if self.verbose == inf:
                             ic(e)
 
+            if self.ser.inWaiting() == 0:
+                time.sleep(0.1)
+
 
 def launch_serial_queue_process(
     *,
@@ -241,7 +245,7 @@ def launch_serial_queue_process(
     serial_data_dir: Path,
     serial_baud_rate: int,
     log_serial_data: bool,
-    verbose: bool | int | float,
+    verbose: bool | int | float = False,
 ):
     ready_signal = str(time.time())
     serial_queue = SerialQueue(
@@ -252,7 +256,6 @@ def launch_serial_queue_process(
         serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
         ready_signal=ready_signal,
-        verbose=verbose,
     )
     serial_queue_process = Process(target=serial_queue.listen_serial, args=())
     serial_queue_process.start()
@@ -270,12 +273,12 @@ def launch_serial_queue_process(
 
 def print_serial_output(
     *,
-    serial_port: str,
+    serial_port: str | None,
     serial_data_dir: Path,
     log_serial_data: bool,
-    verbose: bool | int | float,
     serial_baud_rate: int = 460800,
     show_bytes: bool = False,
+    verbose: bool | int | float = False,
 ):
     rx_queue = Queue()
     tx_queue = Queue()
@@ -288,7 +291,6 @@ def print_serial_output(
         serial_baud_rate=serial_baud_rate,
         serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
-        verbose=verbose,
     )
     while True:
         if verbose == inf:
@@ -316,11 +318,11 @@ def print_serial_output(
 
 @attr.s(auto_attribs=True)
 class SerialOracle:
-    verbose: bool | int | float
     serial_baud_rate: int
     serial_data_dir: Path
     log_serial_data: bool
     serial_port: str
+    verbose: bool | int | float = False
 
     def __attrs_post_init__(self):
         self.rx_queue = Queue()
@@ -334,7 +336,6 @@ class SerialOracle:
             log_serial_data=self.log_serial_data,
             serial_baud_rate=self.serial_baud_rate,
             serial_data_dir=self.serial_data_dir,
-            verbose=self.verbose,
         )
 
     def status(self):
@@ -384,15 +385,14 @@ class SerialOracle:
     def send_serial_command(
         self,
         command: bytes,
-        verbose: bool | int | float,
         argument: None | bytes = None,
         byte_count_requested=False,
         bytes_expected=None,
         expect_ack: bool = False,
         timeout: None | int = None,
         no_read: bool = False,
+        verbose: bool | int | float = False,
     ):
-
         command_name = lookup_two_byte_command_name(two_bytes=command)
         ic(command, command_name, argument, expect_ack, timeout)
         if not isinstance(command, bytes):
@@ -447,7 +447,6 @@ class SerialOracle:
                     byte_count_requested=byte_count_requested,
                     bytes_expected=bytes_expected,
                     timeout=timeout,
-                    verbose=verbose,
                 )
             except ValueError as e:
                 ic(e)
@@ -464,10 +463,10 @@ class SerialOracle:
         self,
         *,
         byte_count_requested: int,
-        verbose: bool | int | float,
         bytes_expected: None | bytes = None,
         expect_empty: bool = False,
         timeout: None | float = None,
+        verbose: bool | int | float = False,
     ):
         """
         Reads byte_count_requested number of bytes over serial and compares it to bytes_expected if given.
@@ -578,11 +577,10 @@ def cli(
     data_dir: Path,
     show_bytes: bool,
     log_serial_data: bool,
-    verbose: bool | int | float,
     verbose_inf: bool,
     dict_output: bool,
+    verbose: bool | int | float = False,
 ):
-
     if not serial_port:
         serial_port = pick_serial_port()
     print_serial_output(
@@ -590,5 +588,4 @@ def cli(
         serial_data_dir=data_dir,
         log_serial_data=log_serial_data,
         show_bytes=show_bytes,
-        verbose=verbose,
     )
