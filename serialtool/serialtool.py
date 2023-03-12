@@ -32,6 +32,7 @@ import attr
 import click
 import serial
 from asserttool import ic
+from asserttool import icp
 from clicktool import click_add_options
 from clicktool import click_global_options
 from cycloidal_client.command_dict import COMMAND_DICT
@@ -311,9 +312,8 @@ def print_serial_output(
         except Empty:
             pass
         except Exception as e:
-            if verbose:
-                ic(e)
-                ic(type(e))
+            ic(e)
+            ic(type(e))
 
 
 @attr.s(auto_attribs=True)
@@ -322,6 +322,7 @@ class SerialOracle:
     serial_data_dir: Path
     log_serial_data: bool
     serial_port: str
+    ipython_on_communication_error: bool
     verbose: bool | int | float = False
 
     def __attrs_post_init__(self):
@@ -542,13 +543,13 @@ class SerialOracle:
                 raise SerialNoResponseError()
 
             if result != bytes_expected:
-                ic(byte_count_requested)
-                ic()
-                ic(repr(bytes_expected), len(bytes_expected))
-                ic("    ", repr(result), len(result))
-                import IPython
+                icp(byte_count_requested)
+                icp(repr(bytes_expected), len(bytes_expected))
+                icp(repr(result), len(result))
+                if self.ipython_on_communication_error:
+                    import IPython
 
-                IPython.embed()
+                    IPython.embed()
                 raise ValueError(result)
 
         if result.startswith(b"\x06"):
