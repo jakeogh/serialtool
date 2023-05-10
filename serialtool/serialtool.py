@@ -31,6 +31,7 @@ from queue import Empty
 import attr
 import click
 import serial
+from asserttool import gvd
 from asserttool import ic
 from asserttool import icp
 from clicktool import click_add_options
@@ -187,17 +188,16 @@ class SerialQueue:
         ic(self.ser)
         # ic(self.ser.read_until)
         # ic(self.ser.nonblocking)
-        if self.verbose:
-            ic(dir(self.ser))
+        ic(dir(self.ser))
         discard = self.ser.readall()  # self.ser.readlines() is incorrect
-        if self.verbose == inf:
+        if gvd:
             ic(discard)
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
 
         self.rx_queue.put([self.ready_signal])
         while True:
-            # if self.verbose == inf:
+            # if gvd:
             #    ic(self.ser.inWaiting())
             # bytes_buffered = self.ser.inWaiting()
             # if bytes_buffered == self.hardware_buffer_size:
@@ -214,8 +214,9 @@ class SerialQueue:
                 ic(read_bytes)
                 raise ValueError(msg)
 
-            if self.verbose == inf:
-                ic(read_bytes)
+            # loops constantly
+            # if gvd:
+            #    ic(read_bytes)
             if read_bytes:
                 self.rx_queue.put([read_bytes])
 
@@ -225,13 +226,13 @@ class SerialQueue:
                         ic(self.tx_queue.qsize())
                     try:
                         data = self.tx_queue.get(False)[0]
-                        if self.verbose == inf:
+                        if gvd:
                             ic(data)
                         self.ser.write(data)
-                        if self.verbose:
+                        if gvd:
                             ic("wrote:", data)
                     except Empty as e:  # oddness.
-                        if self.verbose == inf:
+                        if gvd:
                             ic(e)
 
             if self.ser.inWaiting() == 0:
@@ -294,7 +295,7 @@ def print_serial_output(
         log_serial_data=log_serial_data,
     )
     while True:
-        if verbose == inf:
+        if gvd:
             queue_size = rx_queue.qsize()
             if queue_size != last_queue_size:
                 ic(queue_size)
@@ -307,7 +308,7 @@ def print_serial_output(
             else:
                 byte_count_written_to_stdout = sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
-                if verbose == inf:
+                if gvd:
                     ic(byte_count_written_to_stdout)
         except Empty:
             pass
@@ -345,17 +346,19 @@ class SerialOracle:
         ic(self.bytes_available())
 
     def bytes_available(self):
-        if self.verbose == inf:
-            ic(self.rx_queue.qsize())
-            ic(len(self.rx_buffer))
+        # this constantly loops
+        # if gvd:
+        #    ic(self.rx_queue.qsize())
+        #    ic(len(self.rx_buffer))
         result = len(self.rx_buffer) - self.rx_buffer_cursor
-        if self.verbose == inf:
-            ic(result)
+        # if gvd:
+        #    ic(result)
         return result
 
     def _read(self, count=inf):
-        if self.verbose == inf:
-            ic(count, "entering while")
+        # this constantly loops
+        # if gvd:
+        #    ic(count, "entering while")
         while self.bytes_available() < count:
             try:
                 data = self.rx_queue.get(False)[0]  # raises Empty
@@ -363,7 +366,7 @@ class SerialOracle:
             except Empty as e:
                 if count != inf:
                     raise e
-                if self.verbose == inf:
+                if gvd:
                     ic("got expected exception Empty, breaking")
                 break
         if count != inf:
@@ -372,7 +375,7 @@ class SerialOracle:
             ]
         else:
             result = self.rx_buffer[self.rx_buffer_cursor :]
-        if self.verbose == inf:
+        if gvd:
             ic(result)
         # self.rx_buffer_cursor += count
         self.rx_buffer_cursor += len(result)  # handle the inf case
@@ -477,17 +480,13 @@ class SerialOracle:
         bytes_expected = True
             byte_count_requested of arb bytes to be read back
         """
-        if verbose == inf:
-            ic()
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
-        if verbose:
-            ic(byte_count_requested, bytes_expected, expect_empty, timeout)
+        ic(byte_count_requested, bytes_expected, expect_empty, timeout)
         if not timeout:
             timeout = inf
-            if verbose == inf:
-                ic(timeout)
+            ic(timeout)
 
         if byte_count_requested == 0:
             assert expect_empty
@@ -502,8 +501,7 @@ class SerialOracle:
             assert bytes_expected is None
             all_bytes = b""
             start_time = time.time()
-            if verbose:
-                ic(start_time, timeout)
+            ic(start_time, timeout)
             while True:
                 read_bytes = self._read(inf)  # aka byte_count_requested
                 if verbose and read_bytes:
@@ -517,8 +515,7 @@ class SerialOracle:
 
         result = b""
         start_time = time.time()
-        if verbose:  # fixme
-            ic(start_time, timeout, byte_count_requested)
+        ic(start_time, timeout, byte_count_requested)
         while len(result) < byte_count_requested:
             bytes_needed = byte_count_requested - len(result)
 
@@ -534,9 +531,9 @@ class SerialOracle:
                 break
 
         if verbose == inf:
-            ic(repr(result))
-            ic(len(result))
-            ic(byte_count_requested)
+            ic(repr(result))  # all data
+        ic(len(result))
+        ic(byte_count_requested)
 
         if bytes_expected:
             if len(result) == 0:
@@ -550,6 +547,7 @@ class SerialOracle:
                     import IPython
 
                     IPython.embed()
+                ic("About to raise ValueError on result:", result, self.ser.inWaiting())
                 raise ValueError(result)
 
         if result.startswith(b"\x06"):
@@ -582,6 +580,9 @@ def cli(
     dict_output: bool,
     verbose: bool | int | float = False,
 ):
+    if not verbose:
+        ic.disable()
+
     if not serial_port:
         serial_port = pick_serial_port()
     print_serial_output(
