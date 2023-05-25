@@ -51,9 +51,14 @@ DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
 
 
-def get_timestamp(decimals=0):
-    timestamp = str(f"%.{decimals}f" % time.time())
+def get_int_timestamp():
+    timestamp = str("%.0f" % time.time())
     return timestamp
+
+
+def get_timestamp():
+    stamp = str("%.22f" % time.time())
+    return stamp
 
 
 def generate_serial_port_help():
@@ -155,7 +160,7 @@ class SerialQueue:
         ic(self.serial_data_dir)
         serial_data_dir = self.serial_data_dir / Path("serial_logs")
         serial_data_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = get_timestamp()
+        timestamp = get_int_timestamp()
         serial_data_file = serial_data_dir / Path(
             timestamp + "_" + self.serial_port.split("/")[-1]
         )
