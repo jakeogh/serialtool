@@ -573,6 +573,7 @@ class SerialOracle:
     default=DATA_DIR,
 )
 @click.option("--show-bytes", is_flag=True)
+@click.option("--timestamp", is_flag=True)
 @click.option("--log-serial-data", is_flag=True)
 @click_add_options(click_global_options)
 def cli(
