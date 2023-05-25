@@ -278,6 +278,7 @@ def print_serial_output(
     serial_port: str | None,
     serial_data_dir: Path,
     log_serial_data: bool,
+    timestamp: bool = False,
     serial_baud_rate: int = 460800,
     show_bytes: bool = False,
     verbose: bool | int | float = False,
@@ -305,6 +306,9 @@ def print_serial_output(
             data = data[0]
             if show_bytes:
                 ic(data)
+            if timestamp:
+                _timestamp = get_timestamp()
+                data = _timestamp.encode("utf8") + b" " + data
             else:
                 byte_count_written_to_stdout = sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
@@ -576,6 +580,7 @@ def cli(
     data_dir: Path,
     show_bytes: bool,
     log_serial_data: bool,
+    timestamp: bool,
     verbose_inf: bool,
     dict_output: bool,
     verbose: bool | int | float = False,
@@ -589,5 +594,6 @@ def cli(
         serial_port=serial_port,
         serial_data_dir=data_dir,
         log_serial_data=log_serial_data,
+        timestamp=timestamp,
         show_bytes=show_bytes,
     )
