@@ -577,7 +577,7 @@ class SerialOracle:
 @click.option("--log-serial-data", is_flag=True)
 @click_add_options(click_global_options)
 def cli(
-    serial_port: str | None,
+    serial_port: tuple[str, ...],
     data_dir: Path,
     show_bytes: bool,
     log_serial_data: bool,
@@ -591,6 +591,9 @@ def cli(
 
     if not serial_port:
         serial_port = pick_serial_port()
+    else:
+        serial_port = serial_port[0]
+
     print_serial_output(
         serial_port=serial_port,
         serial_data_dir=data_dir,
