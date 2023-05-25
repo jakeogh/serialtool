@@ -278,7 +278,7 @@ def print_serial_output(
     serial_port: str | None,
     serial_data_dir: Path,
     log_serial_data: bool,
-    timestamp: bool = False,
+    timestamp: bool,
     baud_rate: int = 460800,
     show_bytes: bool = False,
     verbose: bool | int | float = False,
@@ -309,6 +309,8 @@ def print_serial_output(
             if timestamp:
                 _timestamp = get_timestamp()
                 data = _timestamp.encode("utf8") + b" " + data
+                if gvd:
+                    ic(data)
             else:
                 byte_count_written_to_stdout = sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
