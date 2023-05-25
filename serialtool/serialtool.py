@@ -141,7 +141,7 @@ class SerialQueue:
     log_serial_data: bool
     ready_signal: str
     serial_port: str
-    serial_baud_rate: int = 460800
+    baud_rate: int = 460800
     default_timeout: float = 0.7
     hardware_buffer_size: int = 4096
     verbose: bool | int | float = False
@@ -177,7 +177,7 @@ class SerialQueue:
         ic(serial_url)
         self.ser = serial.serial_for_url(serial_url)
         ic(self.ser.port)
-        self.ser.baudrate = self.serial_baud_rate
+        self.ser.baudrate = self.baud_rate
         ic(self.ser.baudrate)
         self.ser.timeout = self.default_timeout
         ic(self.ser.timeout)
@@ -245,7 +245,7 @@ def launch_serial_queue_process(
     tx_queue: Queue,
     serial_port: str,
     serial_data_dir: Path,
-    serial_baud_rate: int,
+    baud_rate: int,
     log_serial_data: bool,
     verbose: bool | int | float = False,
 ):
@@ -254,7 +254,7 @@ def launch_serial_queue_process(
         rx_queue=rx_queue,
         tx_queue=tx_queue,
         serial_port=serial_port,
-        serial_baud_rate=serial_baud_rate,
+        baud_rate=baud_rate,
         serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
         ready_signal=ready_signal,
@@ -279,7 +279,7 @@ def print_serial_output(
     serial_data_dir: Path,
     log_serial_data: bool,
     timestamp: bool = False,
-    serial_baud_rate: int = 460800,
+    baud_rate: int = 460800,
     show_bytes: bool = False,
     verbose: bool | int | float = False,
 ):
@@ -291,7 +291,7 @@ def print_serial_output(
         rx_queue=rx_queue,
         tx_queue=tx_queue,
         serial_port=serial_port,
-        serial_baud_rate=serial_baud_rate,
+        baud_rate=baud_rate,
         serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
     )
@@ -323,7 +323,7 @@ def print_serial_output(
 
 @attr.s(auto_attribs=True)
 class SerialOracle:
-    serial_baud_rate: int
+    baud_rate: int
     serial_data_dir: Path
     log_serial_data: bool
     serial_port: str
@@ -340,7 +340,7 @@ class SerialOracle:
             tx_queue=self.tx_queue,
             serial_port=self.serial_port,
             log_serial_data=self.log_serial_data,
-            serial_baud_rate=self.serial_baud_rate,
+            baud_rate=self.baud_rate,
             serial_data_dir=self.serial_data_dir,
         )
 
@@ -573,6 +573,7 @@ class SerialOracle:
     default=DATA_DIR,
 )
 @click.option("--show-bytes", is_flag=True)
+@click.option("--baud-rate", type=int, default=460800)
 @click.option("--timestamp", is_flag=True)
 @click.option("--log-serial-data", is_flag=True)
 @click_add_options(click_global_options)
@@ -581,6 +582,7 @@ def cli(
     data_dir: Path,
     show_bytes: bool,
     log_serial_data: bool,
+    baud_rate: int,
     timestamp: bool,
     verbose_inf: bool,
     dict_output: bool,
@@ -600,4 +602,5 @@ def cli(
         log_serial_data=log_serial_data,
         timestamp=timestamp,
         show_bytes=show_bytes,
+        baud_rate=baud_rate,
     )
