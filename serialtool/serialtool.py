@@ -311,11 +311,11 @@ def print_serial_output(
                 data = _timestamp.encode("utf8") + b" " + data
                 if gvd:
                     ic(data)
-            else:
-                byte_count_written_to_stdout = sys.stdout.buffer.write(data)
-                sys.stdout.buffer.flush()
-                if gvd:
-                    ic(byte_count_written_to_stdout)
+            # else:
+            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+            if gvd:
+                ic(byte_count_written_to_stdout)
         except Empty:
             pass
         except Exception as e:
