@@ -408,7 +408,7 @@ class SerialOracle:
         timeout: None | int = None,
         no_read: bool = False,
         verbose: bool | int | float = False,
-        echo: bool = False,
+        echo: bool = True,
     ):
         command_name = lookup_two_byte_command_name(two_bytes=command)
         ic(command, command_name, argument, expect_ack, timeout)
