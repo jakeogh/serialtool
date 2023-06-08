@@ -38,6 +38,7 @@ from clicktool import click_add_options
 from clicktool import click_global_options
 from cycloidal_client.command_dict import COMMAND_DICT
 from cycloidal_client.exceptions import SerialNoResponseError
+from eprint import eprint
 from serial.tools import list_ports
 
 # from contextlib import ExitStack
@@ -407,6 +408,7 @@ class SerialOracle:
         timeout: None | int = None,
         no_read: bool = False,
         verbose: bool | int | float = False,
+        echo: bool = False,
     ):
         command_name = lookup_two_byte_command_name(two_bytes=command)
         ic(command, command_name, argument, expect_ack, timeout)
@@ -441,6 +443,8 @@ class SerialOracle:
             command = command + argument
 
         command = b"\x10\x02" + command + b"\x10\x03"
+        if echo:
+            eprint(expect_ack, command, byte_count_requested)
 
         if verbose:
             ic(
@@ -472,6 +476,8 @@ class SerialOracle:
                     ic(rx_bytes)
                     ic(bytes_expected)
                     raise ValueError(rx_bytes)
+            if echo:
+                eprint(len(rx_bytes))
             return rx_bytes
 
     def read_command_result(
