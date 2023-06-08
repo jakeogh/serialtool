@@ -443,7 +443,7 @@ class SerialOracle:
             command = command + argument
 
         if echo:
-            eprint(expect_ack, command, byte_count_requested)
+            eprint(expect_ack, len(command), command, byte_count_requested)
 
         command = b"\x10\x02" + command + b"\x10\x03"
 
