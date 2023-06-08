@@ -442,9 +442,10 @@ class SerialOracle:
         if argument:
             command = command + argument
 
-        command = b"\x10\x02" + command + b"\x10\x03"
         if echo:
             eprint(expect_ack, command, byte_count_requested)
+
+        command = b"\x10\x02" + command + b"\x10\x03"
 
         if verbose:
             ic(
