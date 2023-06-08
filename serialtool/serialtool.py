@@ -553,6 +553,9 @@ class SerialOracle:
                 ic("TIMEOUT", timeout)
                 break
 
+        if progress:
+            eprint(f"{byte_count_requested}/{len(result)}")
+
         if verbose == inf:
             ic(repr(result))  # all data
         ic(len(result))
