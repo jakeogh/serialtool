@@ -443,7 +443,7 @@ class SerialOracle:
             command = command + argument
 
         if echo:
-            eprint(expect_ack, len(command), command, byte_count_requested)
+            eprint(timeout, expect_ack, len(command), command, byte_count_requested)
 
         command = b"\x10\x02" + command + b"\x10\x03"
 
@@ -489,6 +489,7 @@ class SerialOracle:
         expect_empty: bool = False,
         timeout: None | float = None,
         verbose: bool | int | float = False,
+        progress: bool = False,
     ):
         """
         Reads byte_count_requested number of bytes over serial and compares it to bytes_expected if given.
@@ -534,8 +535,12 @@ class SerialOracle:
         result = b""
         start_time = time.time()
         ic(start_time, timeout, byte_count_requested)
+
         while len(result) < byte_count_requested:
             bytes_needed = byte_count_requested - len(result)
+
+            if progress:
+                eprint(f"{byte_count_requested}/{len(result)}", end="\r")
 
             if bytes_needed > 0:
                 try:
