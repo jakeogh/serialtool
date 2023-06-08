@@ -558,7 +558,7 @@ class SerialOracle:
                     import IPython
 
                     IPython.embed()
-                ic("About to raise ValueError on result:", result, self.ser.inWaiting())
+                ic("About to raise ValueError on result:", result)
                 raise ValueError(result)
 
         if result.startswith(b"\x06"):
