@@ -241,8 +241,8 @@ class SerialQueue:
                         if gvd:
                             ic(e)
 
-            if self.ser.inWaiting() == 0:
-                time.sleep(0.1)
+            # if self.ser.inWaiting() == 0:
+            #    time.sleep(0.1)
 
 
 def launch_serial_queue_process(
