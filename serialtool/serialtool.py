@@ -40,6 +40,8 @@ from cycloidal_client.command_dict import COMMAND_DICT
 from cycloidal_client.exceptions import SerialNoResponseError
 from eprint import eprint
 from serial.tools import list_ports
+from timestamptool import get_int_timestamp
+from timestamptool import get_timestamp
 
 # from contextlib import ExitStack
 # from shutil import get_terminal_size
@@ -50,16 +52,6 @@ from serial.tools import list_ports
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
-
-
-def get_int_timestamp():
-    timestamp = str("%.0f" % time.time())
-    return timestamp
-
-
-def get_timestamp():
-    stamp = str("%.22f" % time.time())
-    return stamp
 
 
 def generate_serial_port_help():
