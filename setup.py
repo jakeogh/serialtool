@@ -9,6 +9,7 @@ dependencies = [
     "pyserial",
     "click",
     "clicktool @ git+https://git@github.com/jakeogh/clicktool",
+    "timestamptool @ git+https://git@github.com/jakeogh/timestamptool",
 ]
 
 config = {
