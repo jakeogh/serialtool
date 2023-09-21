@@ -65,8 +65,9 @@ def get_timestamp():
 def generate_serial_port_help():
     help_text = "Available serial ports: "
     ports = list_ports.comports()
-    for port in ports:
-        help_text += "\b\n" + str(port)
+    help_text = repr(tuple(ports))
+    # for port in ports:
+    #    help_text += "\b\n" + str(port)
 
     help_text.replace("\n\n", "\n")
     return help_text
@@ -253,7 +254,7 @@ def launch_serial_queue_process(
     serial_data_dir: Path,
     baud_rate: int,
     log_serial_data: bool,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
     ready_signal = str(time.time())
     serial_queue = SerialQueue(
@@ -287,7 +288,7 @@ def print_serial_output(
     timestamp: bool,
     baud_rate: int = 460800,
     show_bytes: bool = False,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
     rx_queue = Queue()
     tx_queue = Queue()
@@ -407,7 +408,7 @@ class SerialOracle:
         expect_ack: bool = False,
         timeout: None | int = None,
         no_read: bool = False,
-        verbose: bool | int | float = False,
+        verbose: bool = False,
         echo: bool = True,
     ):
         command_name = lookup_two_byte_command_name(two_bytes=command)
@@ -488,7 +489,7 @@ class SerialOracle:
         bytes_expected: None | bytes = None,
         expect_empty: bool = False,
         timeout: None | float = None,
-        verbose: bool | int | float = False,
+        verbose: bool = False,
         progress: bool = False,
     ):
         """
@@ -608,7 +609,7 @@ def cli(
     timestamp: bool,
     verbose_inf: bool,
     dict_output: bool,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
     if not verbose:
         ic.disable()
