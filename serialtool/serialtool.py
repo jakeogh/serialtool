@@ -65,7 +65,8 @@ def get_timestamp():
 def generate_serial_port_help():
     help_text = "Available serial ports: "
     ports = list_ports.comports()
-    help_text = repr(tuple(ports))
+    _ports = [str(port) for port in ports]
+    help_text = repr(tuple(_ports))
     # for port in ports:
     #    help_text += "\b\n" + str(port)
 
