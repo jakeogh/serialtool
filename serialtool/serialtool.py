@@ -437,7 +437,13 @@ class SerialOracle:
             command = command + argument
 
         if echo:
-            eprint(timeout, expect_ack, len(command), command, byte_count_requested)
+            eprint(
+                f"{timeout=}",
+                f"{expect_ack=}",
+                len(command),
+                command,
+                byte_count_requested,
+            )
 
         command = b"\x10\x02" + command + b"\x10\x03"
 
@@ -576,7 +582,7 @@ class SerialOracle:
 
 
 @click.command()
-@click.argument("serial_port", type=str, nargs=-1)
+@click.argument("serial_port", type=str, nargs=1)
 @click.option(
     "--data_dir",
     type=click.Path(
@@ -594,7 +600,7 @@ class SerialOracle:
 @click.option("--log-serial-data", is_flag=True)
 @click_add_options(click_global_options)
 def cli(
-    serial_port: tuple[str, ...],
+    serial_port: str,
     data_dir: Path,
     show_bytes: bool,
     log_serial_data: bool,
@@ -609,8 +615,8 @@ def cli(
 
     if not serial_port:
         serial_port = pick_serial_port()
-    else:
-        serial_port = serial_port[0]
+    # else:
+    # serial_port = serial_port[0]
 
     print_serial_output(
         serial_port=serial_port,
