@@ -39,6 +39,7 @@ from clicktool import click_global_options
 from cycloidal_client.command_dict import COMMAND_DICT
 from cycloidal_client.exceptions import SerialNoResponseError
 from eprint import eprint
+from globalverbose import gvd
 from serial.tools import list_ports
 from timestamptool import get_int_timestamp
 from timestamptool import get_timestamp
@@ -180,15 +181,18 @@ class SerialQueue:
         self.ser.baudrate = self.baud_rate
         ic(self.ser.baudrate)
         self.ser.timeout = self.default_timeout
-        ic(self.ser.timeout)
-        ic(self.ser.parity)
-        ic(self.ser.bytesize)
-        ic(self.ser.interCharTimeout)
-        ic(self.ser.inter_byte_timeout)
-        ic(self.ser)
+        ic(
+            self.ser.timeout,
+            self.ser.parity,
+            self.ser.bytesize,
+            self.ser.interCharTimeout,
+            self.ser.inter_byte_timeout,
+        )
+        # ic(self.ser)
         # ic(self.ser.read_until)
         # ic(self.ser.nonblocking)
-        ic(dir(self.ser))
+        if gvd:
+            ic(dir(self.ser))
         discard = self.ser.readall()  # self.ser.readlines() is incorrect
         if gvd:
             ic(discard)
