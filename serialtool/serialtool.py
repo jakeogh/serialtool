@@ -395,10 +395,10 @@ class SerialOracle:
     def send_serial_command(
         self,
         command: bytes,
+        expect_ack: bool,
         argument: None | bytes = None,
         byte_count_requested=False,
         bytes_expected=None,
-        expect_ack: bool = False,
         timeout: None | int = None,
         no_read: bool = False,
         verbose: bool = False,
