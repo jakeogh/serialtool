@@ -450,6 +450,7 @@ class SerialOracle:
             )
 
         command = b"\x10\x02" + command + b"\x10\x03"
+        eprint(command.hex())
 
         if verbose:
             ic(
