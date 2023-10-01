@@ -440,9 +440,9 @@ class SerialOracle:
             eprint(
                 f"{timeout=}",
                 f"{expect_ack=}",
-                len(command),
+                f"{len(command)=}",
                 command,
-                byte_count_requested,
+                f"{byte_count_requested=}",
             )
 
         command = b"\x10\x02" + command + b"\x10\x03"
