@@ -153,7 +153,6 @@ class SerialQueue:
             self.serial_port = pick_serial_port()
 
         ic(self.serial_port)
-        ic(self.serial_data_dir)
         serial_data_dir = self.serial_data_dir / Path("serial_logs")
         serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
@@ -174,8 +173,10 @@ class SerialQueue:
             else:
                 serial_url.append("NUL:")
 
+        if self.log_serial_data:
+            icp(self.serial_data_dir)
         serial_url = "".join(serial_url)
-        ic(serial_url)
+        icp(serial_url)
         self.ser = serial.serial_for_url(serial_url)
         ic(self.ser.port)
         self.ser.baudrate = self.baud_rate
