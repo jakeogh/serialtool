@@ -189,7 +189,6 @@ class SerialQueue:
             self.ser.interCharTimeout,
             self.ser.inter_byte_timeout,
         )
-        # ic(self.ser)
         # ic(self.ser.read_until)
         # ic(self.ser.nonblocking)
         if gvd:
