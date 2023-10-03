@@ -484,6 +484,8 @@ class SerialOracle:
                     raise ValueError(rx_bytes)
             if echo:
                 eprint(f"{len(rx_bytes)=}")
+                if len(rx_bytes) < 10:
+                    eprint(f"{repr(rx_bytes)=}")
             return rx_bytes
 
     def read_command_result(
