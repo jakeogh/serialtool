@@ -445,8 +445,8 @@ class SerialOracle:
                 f"{timeout=}",
                 f"{expect_ack=}",
                 f"{len(command)=}",
+                f"argument={_argument_repr}",
                 command,
-                _argument_repr,
                 f"{byte_count_requested=}",
             )
 
