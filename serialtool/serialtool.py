@@ -31,7 +31,6 @@ from queue import Empty
 import attr
 import click
 import serial
-from asserttool import gvd
 from asserttool import ic
 from asserttool import icp
 from clicktool import click_add_options
@@ -441,11 +440,13 @@ class SerialOracle:
             command = command + argument
 
         if echo:
+            _argument_repr = repr(argument)[0:10]
             eprint(
                 f"{timeout=}",
                 f"{expect_ack=}",
                 f"{len(command)=}",
                 command,
+                _argument_repr,
                 f"{byte_count_requested=}",
             )
 
