@@ -439,6 +439,8 @@ class SerialOracle:
         if argument:
             command = command + argument
 
+        command = b"\x10\x02" + command + b"\x10\x03"
+
         if echo:
             _argument_repr = repr(argument)[0:10]
             eprint(
@@ -448,10 +450,8 @@ class SerialOracle:
                 f"argument={_argument_repr}",
                 command,
                 f"{byte_count_requested=}",
+                command.hex(),
             )
-
-        command = b"\x10\x02" + command + b"\x10\x03"
-        eprint(command.hex())
 
         if verbose:
             ic(
