@@ -445,6 +445,93 @@ class SerialOracle:
             ic(data)
         self.tx_queue.put([data])
 
+    def send_serial_command_direct(
+        self,
+        command: bytes,
+        expect_ack: bool,
+        byte_count_requested=False,
+        bytes_expected=None,
+        timeout: None | int = None,
+        no_read: bool = False,
+        verbose: bool = False,
+        echo: bool = True,
+        simulate: bool = False,
+    ):
+        if simulate:
+            echo = True
+        ic(command, expect_ack, timeout)
+        if not isinstance(command, bytes):
+            raise TypeError(f"type(command) must be bytes, not {type(command)}")
+
+        if expect_ack:
+            assert not byte_count_requested
+            byte_count_requested = 3
+            assert not bytes_expected
+            bytes_expected = b"\x06" + command
+            assert not no_read
+            assert byte_count_requested != inf
+
+        if byte_count_requested:
+            assert not no_read
+
+        if no_read:
+            assert not byte_count_requested
+            assert byte_count_requested != inf
+        elif byte_count_requested == inf:
+            assert not no_read
+        else:
+            assert byte_count_requested
+
+        if echo:
+            eprint(
+                f"{timeout=}",
+                f"{expect_ack=}",
+                f"{len(command)=}",
+                command,
+                f"{byte_count_requested=}",
+                command.hex(),
+            )
+
+        if verbose:
+            ic(
+                command,
+                len(command),
+                expect_ack,
+                byte_count_requested,
+                bytes_expected,
+                timeout,
+            )
+
+        if simulate:
+            return b""
+
+        self.write(command)
+        if not no_read:
+            if expect_ack:
+                if not timeout:
+                    timeout = 10
+            try:
+                rx_bytes = self.read_command_result(
+                    byte_count_requested=byte_count_requested,
+                    bytes_expected=bytes_expected,
+                    timeout=timeout,
+                )
+            except ValueError as e:
+                ic(e)
+                raise e
+
+            if expect_ack:
+                if rx_bytes != bytes_expected:
+                    ic(rx_bytes)
+                    ic(bytes_expected)
+                    raise ValueError(rx_bytes)
+            if echo:
+                eprint(f"{len(rx_bytes)=}")
+                # if len(rx_bytes) < 10:
+                eprint(f"{repr(rx_bytes)=}")
+            return rx_bytes
+        return b""
+
     def send_serial_command(
         self,
         command: bytes,
