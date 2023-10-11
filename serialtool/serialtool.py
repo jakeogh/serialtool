@@ -510,7 +510,10 @@ class SerialOracle:
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
-        ic(byte_count_requested, bytes_expected, expect_empty, timeout)
+        # ic(byte_count_requested, bytes_expected, expect_empty, timeout)
+        eprint(
+            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=}"
+        )
         if not timeout:
             timeout = inf
             ic(timeout)
