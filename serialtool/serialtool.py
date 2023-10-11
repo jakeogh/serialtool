@@ -488,7 +488,7 @@ class SerialOracle:
         else:
             assert byte_count_requested
 
-        command = self.construct_serial_command(command=command, argument=argument)
+        command = construct_serial_command(command=command, argument=argument)
 
         if echo:
             _argument_repr = repr(argument)[0:10]
