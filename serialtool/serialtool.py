@@ -54,6 +54,19 @@ DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
 
 
+def construct_serial_command(
+    command: bytes,
+    argument: None | bytes = None,
+):
+    command_name = lookup_two_byte_command_name(two_bytes=command)
+    ic(command, command_name)
+    if argument:
+        command = command + argument
+
+    command = b"\x10\x02" + command + b"\x10\x03"
+    return command
+
+
 def generate_serial_port_help():
     help_text = "Available serial ports: "
     ports = list_ports.comports()
@@ -443,9 +456,11 @@ class SerialOracle:
         no_read: bool = False,
         verbose: bool = False,
         echo: bool = True,
+        simulate: bool = False,
     ):
-        command_name = lookup_two_byte_command_name(two_bytes=command)
-        ic(command, command_name, argument, expect_ack, timeout)
+        if simulate:
+            echo = True
+        ic(command, argument, expect_ack, timeout)
         if not isinstance(command, bytes):
             raise TypeError(f"type(command) must be bytes, not {type(command)}")
         if argument:
@@ -473,10 +488,7 @@ class SerialOracle:
         else:
             assert byte_count_requested
 
-        if argument:
-            command = command + argument
-
-        command = b"\x10\x02" + command + b"\x10\x03"
+        command = self.construct_serial_command(command=command, argument=argument)
 
         if echo:
             _argument_repr = repr(argument)[0:10]
@@ -499,6 +511,9 @@ class SerialOracle:
                 bytes_expected,
                 timeout,
             )
+
+        if simulate:
+            return b""
 
         self.write(command)
         if not no_read:
