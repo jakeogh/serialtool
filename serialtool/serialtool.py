@@ -22,6 +22,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+from io import BufferedReader
 from math import inf
 from multiprocessing import Process
 from multiprocessing import Queue
@@ -293,11 +294,17 @@ def print_serial_oracle(
     *,
     serial_oracle: SerialOracle,
     timestamp: bool,
+    read_tx_from_fifo: bool,
     show_bytes: bool = False,
     verbose: bool = False,
 ):
     last_queue_size = None
     queue_size = 0
+
+    fifo_handle: int | None = None
+    if read_tx_from_fifo:
+        fifo_handle = open("/delme/fifo", "rb")
+
     while True:
         if gvd:
             queue_size = serial_oracle.rx_queue.qsize()
@@ -314,7 +321,9 @@ def print_serial_oracle(
                 data = _timestamp.encode("utf8") + b" " + data
                 if gvd:
                     ic(data)
-            # else:
+            if read_tx_from_fifo:
+                bytes_to_tx = fifo_handle.read()
+                icp(bytes_to_tx)
             byte_count_written_to_stdout = sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
             if gvd:
@@ -332,6 +341,7 @@ def print_serial_output(
     serial_data_dir: Path,
     log_serial_data: bool,
     timestamp: bool,
+    read_tx_from_fifo: bool,
     baud_rate: int = 460800,
     show_bytes: bool = False,
     verbose: bool = False,
@@ -340,6 +350,9 @@ def print_serial_output(
     tx_queue = Queue()
     last_queue_size = None
     queue_size = 0
+    fifo_handle: BufferedReader | None = None
+    if read_tx_from_fifo:
+        fifo_handle = open("/delme/fifo", "rb")
     serial_queue_process = launch_serial_queue_process(
         rx_queue=rx_queue,
         tx_queue=tx_queue,
@@ -364,9 +377,11 @@ def print_serial_output(
                 data = _timestamp.encode("utf8") + b" " + data
                 if gvd:
                     ic(data)
-            # else:
             byte_count_written_to_stdout = sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
+            if read_tx_from_fifo:
+                bytes_to_tx = fifo_handle.read()
+                icp(bytes_to_tx)
             if gvd:
                 ic(byte_count_written_to_stdout)
         except Empty:
@@ -747,6 +762,7 @@ class SerialOracle:
 @click.option("--show-bytes", is_flag=True)
 @click.option("--baud-rate", type=int, default=460800)
 @click.option("--timestamp", is_flag=True)
+@click.option("--read-from-fifo", is_flag=True)
 @click.option("--log-serial-data", is_flag=True)
 @click_add_options(click_global_options)
 def cli(
@@ -755,6 +771,7 @@ def cli(
     show_bytes: bool,
     log_serial_data: bool,
     baud_rate: int,
+    read_from_fifo: bool,
     timestamp: bool,
     verbose_inf: bool,
     dict_output: bool,
@@ -775,4 +792,5 @@ def cli(
         timestamp=timestamp,
         show_bytes=show_bytes,
         baud_rate=baud_rate,
+        read_tx_from_fifo=read_from_fifo,
     )
