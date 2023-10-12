@@ -303,6 +303,7 @@ def print_serial_oracle(
 
     fifo_handle: int | None = None
     if read_tx_from_fifo:
+        icp("opening fifo")
         fifo_handle = open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
 
     while True:
