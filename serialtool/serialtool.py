@@ -36,6 +36,7 @@ from asserttool import ic
 from asserttool import icp
 from clicktool import click_add_options
 from clicktool import click_global_options
+from clicktool import tvicgvd
 from cycloidal_client.command_dict import COMMAND_DICT
 from cycloidal_client.exceptions import SerialNoResponseError
 from eprint import eprint
@@ -364,6 +365,7 @@ def print_serial_output(
         log_serial_data=log_serial_data,
     )
     while True:
+        assert gvd
         if gvd:
             queue_size = rx_queue.qsize()
             if queue_size != last_queue_size:
@@ -767,7 +769,9 @@ class SerialOracle:
 @click.option("--read-from-fifo", is_flag=True)
 @click.option("--log-serial-data", is_flag=True)
 @click_add_options(click_global_options)
+@click.pass_context
 def cli(
+    ctx,
     serial_port: str,
     data_dir: Path,
     show_bytes: bool,
@@ -779,8 +783,13 @@ def cli(
     dict_output: bool,
     verbose: bool = False,
 ):
-    if not verbose:
-        ic.disable()
+    tty, verbose = tvicgvd(
+        ctx=ctx,
+        verbose=verbose,
+        verbose_inf=verbose_inf,
+        ic=ic,
+        gvd=gvd,
+    )
 
     if not serial_port:
         serial_port = pick_serial_port()
