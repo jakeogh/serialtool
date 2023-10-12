@@ -303,7 +303,7 @@ def print_serial_oracle(
 
     fifo_handle: int | None = None
     if read_tx_from_fifo:
-        fifo_handle = open("/delme/fifo", "rb")
+        fifo_handle = open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
 
     while True:
         if gvd:
@@ -322,6 +322,7 @@ def print_serial_oracle(
                 if gvd:
                     ic(data)
             if read_tx_from_fifo:
+                icp("read")
                 bytes_to_tx = fifo_handle.read()
                 icp(bytes_to_tx)
             byte_count_written_to_stdout = sys.stdout.buffer.write(data)
