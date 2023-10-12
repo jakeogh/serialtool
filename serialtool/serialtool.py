@@ -354,7 +354,7 @@ def print_serial_output(
     queue_size = 0
     fifo_handle: BufferedReader | None = None
     if read_tx_from_fifo:
-        fifo_handle = open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
+        fifo_handle = os.open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
     serial_queue_process = launch_serial_queue_process(
         rx_queue=rx_queue,
         tx_queue=tx_queue,
