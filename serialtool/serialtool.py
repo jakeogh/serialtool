@@ -353,7 +353,7 @@ def print_serial_output(
     tx_queue = Queue()
     last_queue_size = None
     queue_size = 0
-    fifo_handle: BufferedReader | None = None
+    fifo_handle: int | None = None
     if read_tx_from_fifo:
         fifo_handle = os.open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
     serial_queue_process = launch_serial_queue_process(
@@ -365,7 +365,6 @@ def print_serial_output(
         log_serial_data=log_serial_data,
     )
     while True:
-        assert gvd
         if gvd:
             queue_size = rx_queue.qsize()
             if queue_size != last_queue_size:
@@ -384,7 +383,7 @@ def print_serial_output(
             byte_count_written_to_stdout = sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
             if read_tx_from_fifo:
-                bytes_to_tx = fifo_handle.read()
+                bytes_to_tx = os.read(fifo_handle)
                 icp(bytes_to_tx)
             if gvd:
                 ic(byte_count_written_to_stdout)
