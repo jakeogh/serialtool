@@ -201,7 +201,7 @@ class SerialQueue:
             self.ser.baudrate,
             self.ser.bytesize,
             self.ser.parity,
-            self.ser.stop_bits,
+            self.ser.stopbits,
             self.ser.timeout,
             self.ser.xonxoff,
             self.ser.rtscts,
