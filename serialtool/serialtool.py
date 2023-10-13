@@ -17,6 +17,7 @@
 # pylint: disable=too-few-public-methods          # [R0903]
 # pylint: disable=no-member                       # [E1101] no member for base
 # pylint: disable=attribute-defined-outside-init  # [W0201]
+
 from __future__ import annotations
 
 import errno
@@ -340,11 +341,10 @@ def read_fifo(io_handle, length: int = 32) -> None | bytes:
         pass
     else:
         eprint(f"{buffer=}")
-        #for _ in buffer:
+        # for _ in buffer:
         #    eprint(f"{_=}")
-    #time.sleep(1)
+    # time.sleep(1)
     return buffer
-
 
 
 def print_serial_output(
@@ -803,8 +803,6 @@ def cli(
 
     if not serial_port:
         serial_port = pick_serial_port()
-    # else:
-    # serial_port = serial_port[0]
 
     print_serial_output(
         serial_port=serial_port,
