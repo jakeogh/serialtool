@@ -371,6 +371,7 @@ def print_serial_output(
                 ic(queue_size)
                 last_queue_size = queue_size
         try:
+            icp("try")
             data = rx_queue.get(False)
             data = data[0]
             if show_bytes:
