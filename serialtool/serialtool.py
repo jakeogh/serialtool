@@ -19,6 +19,7 @@
 # pylint: disable=attribute-defined-outside-init  # [W0201]
 from __future__ import annotations
 
+import errno
 import os
 import sys
 import time
@@ -338,6 +339,26 @@ def launch_serial_queue_process(
 #            ic(type(e))
 
 
+def read_fifo(io_handle, length: int = 32) -> None | bytes:
+    try:
+        buffer: None | bytes = os.read(io_handle, length)
+    except OSError as err:
+        if err.errno in {errno.EAGAIN, errno.EWOULDBLOCK}:
+            buffer = None
+        else:
+            raise
+
+    if buffer is None:
+        pass
+    else:
+        eprint(f"{buffer=}")
+        #for _ in buffer:
+        #    eprint(f"{_=}")
+    #time.sleep(1)
+    return buffer
+
+
+
 def print_serial_output(
     *,
     serial_port: str | None,
@@ -388,10 +409,9 @@ def print_serial_output(
         except Empty:
             pass
         if read_tx_from_fifo:
-            # ic("pread")
-            bytes_to_tx = os.read(fifo_handle, 1000)
-            if bytes_to_tx:
-                icp(bytes_to_tx)
+            _result = read_fifo(io_handle=fifo_handle, length=32)
+            if _result:
+                icp(_result)
         # except Exception as e:
         #    ic(e)
         #    ic(type(e))
