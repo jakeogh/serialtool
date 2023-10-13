@@ -388,11 +388,11 @@ def print_serial_output(
         except Empty:
             pass
         if read_tx_from_fifo:
-            #ic("pread")
+            # ic("pread")
             bytes_to_tx = os.read(fifo_handle, 1000)
             if bytes_to_tx:
                 icp(bytes_to_tx)
-        #except Exception as e:
+        # except Exception as e:
         #    ic(e)
         #    ic(type(e))
 
