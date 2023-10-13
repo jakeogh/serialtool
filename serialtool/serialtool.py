@@ -328,7 +328,7 @@ def print_serial_oracle(
             pass
 
 
-def read_fifo(io_handle, length: int = 32) -> None | bytes:
+def read_fifo(io_handle, length: int) -> None | bytes:
     try:
         buffer: None | bytes = os.read(io_handle, length)
     except OSError as err:
@@ -340,10 +340,8 @@ def read_fifo(io_handle, length: int = 32) -> None | bytes:
     if buffer is None:
         pass
     else:
-        eprint(f"{buffer=}")
-        # for _ in buffer:
-        #    eprint(f"{_=}")
-    # time.sleep(1)
+        eprint(f"read_fifo() {len(buffer)=} {buffer=}")
+
     return buffer
 
 
