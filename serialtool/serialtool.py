@@ -292,51 +292,39 @@ def launch_serial_queue_process(
     return serial_queue_process
 
 
-# def print_serial_oracle(
-#    *,
-#    serial_oracle: SerialOracle,
-#    timestamp: bool,
-#    read_tx_from_fifo: bool,
-#    show_bytes: bool = False,
-#    verbose: bool = False,
-# ):
-#    last_queue_size = None
-#    queue_size = 0
-#
-#    fifo_handle: int | None = None
-#    if read_tx_from_fifo:
-#        icp("opening fifo")
-#        fifo_handle = open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
-#
-#    while True:
-#        if gvd:
-#            queue_size = serial_oracle.rx_queue.qsize()
-#            if queue_size != last_queue_size:
-#                ic(queue_size)
-#                last_queue_size = queue_size
-#        try:
-#            data = serial_oracle.rx_queue.get(False)
-#            data = data[0]
-#            if show_bytes:
-#                ic(data)
-#            if timestamp:
-#                _timestamp = get_timestamp()
-#                data = _timestamp.encode("utf8") + b" " + data
-#                if gvd:
-#                    ic(data)
-#            if read_tx_from_fifo:
-#                icp("read")
-#                bytes_to_tx = fifo_handle.read()
-#                icp(bytes_to_tx)
-#            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
-#            sys.stdout.buffer.flush()
-#            if gvd:
-#                ic(byte_count_written_to_stdout)
-#        except Empty:
-#            pass
-#        except Exception as e:
-#            ic(e)
-#            ic(type(e))
+def print_serial_oracle(
+    *,
+    serial_oracle: SerialOracle,
+    timestamp: bool,
+    read_tx_from_fifo: bool,
+    show_bytes: bool = False,
+    verbose: bool = False,
+):
+    last_queue_size = None
+    queue_size = 0
+
+    while True:
+        if gvd:
+            queue_size = serial_oracle.rx_queue.qsize()
+            if queue_size != last_queue_size:
+                ic(queue_size)
+                last_queue_size = queue_size
+        try:
+            data = serial_oracle.rx_queue.get(False)
+            data = data[0]
+            if show_bytes:
+                ic(data)
+            if timestamp:
+                _timestamp = get_timestamp()
+                data = _timestamp.encode("utf8") + b" " + data
+                if gvd:
+                    ic(data)
+            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+            if gvd:
+                ic(byte_count_written_to_stdout)
+        except Empty:
+            pass
 
 
 def read_fifo(io_handle, length: int = 32) -> None | bytes:
