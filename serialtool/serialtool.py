@@ -384,6 +384,7 @@ def print_serial_output(
             byte_count_written_to_stdout = sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
             if read_tx_from_fifo:
+                ic("pread")
                 bytes_to_tx = os.pread(fifo_handle, 1000, 0)
                 icp(bytes_to_tx)
             if gvd:
