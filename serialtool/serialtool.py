@@ -390,7 +390,8 @@ def print_serial_output(
         if read_tx_from_fifo:
             #ic("pread")
             bytes_to_tx = os.read(fifo_handle, 1000)
-            icp(bytes_to_tx)
+            if bytes_to_tx:
+                icp(bytes_to_tx)
         #except Exception as e:
         #    ic(e)
         #    ic(type(e))
