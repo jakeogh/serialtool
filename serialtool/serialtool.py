@@ -194,16 +194,22 @@ class SerialQueue:
         serial_url = "".join(serial_url)
         icp(serial_url)
         self.ser = serial.serial_for_url(serial_url)
-        ic(self.ser.port)
         self.ser.baudrate = self.baud_rate
-        ic(self.ser.baudrate)
         self.ser.timeout = self.default_timeout
         ic(
-            self.ser.timeout,
-            self.ser.parity,
+            self.ser.port,
+            self.ser.baudrate,
             self.ser.bytesize,
-            self.ser.interCharTimeout,
+            self.ser.parity,
+            self.ser.stop_bits,
+            self.ser.timeout,
+            self.ser.xonxoff,
+            self.ser.rtscts,
+            self.ser.dsrdtr,
+            self.ser.write_timeout,
             self.ser.inter_byte_timeout,
+            self.ser.exclusive,
+            self.ser,
         )
         # ic(self.ser.read_until)
         # ic(self.ser.nonblocking)
