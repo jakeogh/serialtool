@@ -400,6 +400,7 @@ def print_serial_output(
             _result = read_fifo(io_handle=fifo_handle, length=32)
             if _result:
                 icp(_result)
+                tx_queue.put([_result])
         # except Exception as e:
         #    ic(e)
         #    ic(type(e))
@@ -469,7 +470,7 @@ class SerialOracle:
         self.rx_buffer_cursor += len(result)  # handle the inf case
         return result
 
-    def write(self, data):
+    def write(self, data: bytes) -> None:
         if self.verbose:
             ic(data)
         self.tx_queue.put([data])
