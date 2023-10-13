@@ -197,7 +197,8 @@ class SerialQueue:
         self.ser.baudrate = self.baud_rate
         self.ser.timeout = self.default_timeout
         self.ser.ctsrts = False
-        self.ser.dsrdtr = True
+        self.ser.dsrdtr = False
+        self.ser.xonxoff = True
         ic(
             self.ser.port,
             self.ser.baudrate,
