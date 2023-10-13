@@ -410,7 +410,7 @@ def print_serial_output(
         if read_tx_from_fifo:
             _result = read_fifo(io_handle=fifo_handle, length=32)
             if _result:
-                icp(_result)
+                ic(_result)
                 tx_queue.put([_result])
         # except Exception as e:
         #    ic(e)
