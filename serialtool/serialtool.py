@@ -254,7 +254,7 @@ class SerialQueue:
                         ic(self.tx_queue.qsize())
                     try:
                         _tx_data = self.tx_queue.get(False)[0]
-                        icp(_tx_data)
+                        # icp(_tx_data)
                         if gvd:
                             ic(_tx_data)
                         _bytes_written = self.ser.write(_tx_data)
