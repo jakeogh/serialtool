@@ -371,7 +371,7 @@ def print_serial_output(
                 ic(queue_size)
                 last_queue_size = queue_size
         try:
-            icp("try")
+            # icp("try")
             data = rx_queue.get(False)
             data = data[0]
             if show_bytes:
@@ -384,7 +384,7 @@ def print_serial_output(
             byte_count_written_to_stdout = sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
             if read_tx_from_fifo:
-                bytes_to_tx = os.pread(fifo_handle, 1000)
+                bytes_to_tx = os.pread(fifo_handle, 1000, 0)
                 icp(bytes_to_tx)
             if gvd:
                 ic(byte_count_written_to_stdout)
