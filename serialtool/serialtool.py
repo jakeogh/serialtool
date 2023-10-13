@@ -245,12 +245,13 @@ class SerialQueue:
                     if self.verbose:
                         ic(self.tx_queue.qsize())
                     try:
-                        data = self.tx_queue.get(False)[0]
+                        _tx_data = self.tx_queue.get(False)[0]
+                        icp(_tx_data)
                         if gvd:
-                            ic(data)
-                        self.ser.write(data)
+                            ic(_tx_data)
+                        self.ser.write(_tx_data)
                         if gvd:
-                            ic("wrote:", data)
+                            ic("wrote:", _tx_data)
                     except Empty as e:  # oddness.
                         if gvd:
                             ic(e)
