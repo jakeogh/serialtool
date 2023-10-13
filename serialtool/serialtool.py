@@ -249,7 +249,9 @@ class SerialQueue:
                         icp(_tx_data)
                         if gvd:
                             ic(_tx_data)
-                        self.ser.write(_tx_data)
+                        _bytes_written = self.ser.write(_tx_data)
+                        assert _bytes_written == len(_tx_data)
+                        self.ser.flush()
                         if gvd:
                             ic("wrote:", _tx_data)
                     except Empty as e:  # oddness.
@@ -359,6 +361,7 @@ def print_serial_output(
 ):
     rx_queue = Queue()
     tx_queue = Queue()
+    tx_tosend_queue = []
     last_queue_size = None
     queue_size = 0
     fifo_handle: int | None = None
