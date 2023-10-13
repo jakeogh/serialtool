@@ -159,7 +159,7 @@ class SerialQueue:
     ready_signal: str
     serial_port: str
     baud_rate: int = 460800
-    default_timeout: float = 0.7
+    default_timeout: float = 1.0
     hardware_buffer_size: int = 4096
     verbose: bool | int | float = False
 
