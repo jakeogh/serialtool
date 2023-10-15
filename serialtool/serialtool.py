@@ -509,7 +509,7 @@ class SerialOracle:
             assert not byte_count_requested
             byte_count_requested = 3
             assert not bytes_expected
-            bytes_expected = b"\x06" + command
+            bytes_expected = b"\x06" + command[2:4]  # uug
             assert not no_read
             assert byte_count_requested != inf
 
