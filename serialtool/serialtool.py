@@ -696,7 +696,8 @@ class SerialOracle:
             f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=}"
         )
 
-        assert len(bytes_expected) == byte_count_requested
+        if bytes_expected and byte_count_requested:
+            assert len(bytes_expected) == byte_count_requested
 
         if not timeout:
             timeout = inf
