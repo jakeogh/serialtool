@@ -178,20 +178,20 @@ class SerialQueue:
 
         # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.serial_for_url
         # https://pyserial.readthedocs.io/en/latest/url_handlers.html#urls
-        serial_url = ["spy://", self.serial_port]
+        serial_url_list = ["spy://", self.serial_port]
 
-        serial_url.append("?file=")
+        serial_url_list.append("?file=")
         if self.log_serial_data:
-            serial_url.append(serial_data_file.as_posix())
+            serial_url_list.append(serial_data_file.as_posix())
         else:
             if sys.platform == "linux":
-                serial_url.append("/dev/null")
+                serial_url_list.append("/dev/null")
             else:
-                serial_url.append("NUL:")
+                serial_url_list.append("NUL:")
 
         if self.log_serial_data:
             icp(self.serial_data_dir)
-        serial_url = "".join(serial_url)
+        serial_url = "".join(serial_url_list)
         icp(serial_url)
         self.ser = serial.serial_for_url(serial_url)
         self.ser.baudrate = self.baud_rate
@@ -695,6 +695,9 @@ class SerialOracle:
         eprint(
             f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=}"
         )
+
+        assert len(bytes_expected) == byte_count_requested
+
         if not timeout:
             timeout = inf
             ic(timeout)
