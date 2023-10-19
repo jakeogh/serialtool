@@ -445,6 +445,13 @@ class SerialOracle:
         self.serial_queue_process.terminate()
         self.serial_queue_process.kill()
         self.serial_queue_process.close()
+        #     File "/usr/lib/python3.11/site-packages/cycloidal_client/cycloidal_client.py", line 949, in command_serial
+        #       serial_oracle.terminate()
+        #     File "/usr/lib/python3.11/site-packages/serialtool/serialtool.py", line 447, in terminate
+        #       self.serial_queue_process.close()
+        #     File "/usr/lib/python3.11/multiprocessing/process.py", line 181, in close
+        #       raise ValueError("Cannot close a process while it is still running. "
+        #   ValueError: Cannot close a process while it is still running. You should first call join() or terminate().
 
     def status(self):
         ic(self.rx_queue.qsize())
