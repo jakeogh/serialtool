@@ -292,10 +292,13 @@ def launch_serial_queue_process(
         log_serial_data=log_serial_data,
         ready_signal=ready_signal,
     )
-    mp_context = get_context("spawn")
-    serial_queue_process = mp_context.Process(
-        target=serial_queue.listen_serial, args=()
-    )
+    # if I use this context, calling start() throws:
+    # RuntimeError: A SemLock created in a fork context is being shared with a process in a spawn context. This is not supported. Please use the same context to create multiprocessing objects and Process.
+    # mp_context = get_context("spawn")
+    # serial_queue_process = mp_context.Process(
+    #    target=serial_queue.listen_serial, args=()
+    # )
+    serial_queue_process = Process(target=serial_queue.listen_serial, args=())
     serial_queue_process.start()
     while True:
         try:
