@@ -441,6 +441,11 @@ class SerialOracle:
             serial_data_dir=self.serial_data_dir,
         )
 
+    def terminate(self):
+        self.serial_queue_process.terminate()
+        self.serial_queue_process.kill()
+        self.serial_queue_process.close()
+
     def status(self):
         ic(self.rx_queue.qsize())
         ic(len(self.rx_buffer))
