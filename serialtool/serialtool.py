@@ -28,6 +28,7 @@ from io import BufferedReader
 from math import inf
 from multiprocessing import Process
 from multiprocessing import Queue
+from multiprocessing import get_context
 from pathlib import Path
 from queue import Empty
 
@@ -291,7 +292,10 @@ def launch_serial_queue_process(
         log_serial_data=log_serial_data,
         ready_signal=ready_signal,
     )
-    serial_queue_process = Process(target=serial_queue.listen_serial, args=())
+    mp_context = get_context("spawn")
+    serial_queue_process = mp_context.Process(
+        target=serial_queue.listen_serial, args=()
+    )
     serial_queue_process.start()
     while True:
         try:
