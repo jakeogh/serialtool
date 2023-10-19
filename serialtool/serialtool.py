@@ -257,7 +257,7 @@ class SerialQueue:
                     try:
                         _exit_on_list = self.tx_queue.get(False)
                         if _exit_on_list == ["EXIT"]:
-                            eprint("got [EXIT]")
+                            icp("got [EXIT]")
                             sys.exit(0)
                         _tx_data = _exit_on_list[0]
                         # icp(_tx_data)
