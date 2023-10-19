@@ -255,10 +255,11 @@ class SerialQueue:
                     if self.verbose:
                         ic(self.tx_queue.qsize())
                     try:
-                        _exit_on_none = self.tx_queue.get(False)
-                        if _exit_on_none is None:
+                        _exit_on_list = self.tx_queue.get(False)
+                        if _exit_on_list == ["EXIT"]:
+                            eprint("got [EXIT]")
                             sys.exit(0)
-                        _tx_data = _exit_on_none[0]
+                        _tx_data = _exit_on_list[0]
                         # icp(_tx_data)
                         if gvd:
                             ic(_tx_data)
