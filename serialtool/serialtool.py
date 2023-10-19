@@ -258,6 +258,7 @@ class SerialQueue:
                         _exit_on_list = self.tx_queue.get(False)
                         if _exit_on_list == ["EXIT"]:
                             icp("got [EXIT]")
+                            raise KeyboardInterrupt
                             sys.exit(0)
                         _tx_data = _exit_on_list[0]
                         # icp(_tx_data)
