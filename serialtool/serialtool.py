@@ -499,8 +499,9 @@ class SerialOracle:
             if progress:
                 # eprint(f"{count}/{len(self.rx_buffer)}", end="\r")
                 _len = len(self.rx_buffer)
-                _Bps = _len / (time.time() - _start_time)
-                eprint(f"{count}/{_len} {_Bps}", end="\r")
+                _duration = time.time() - _start_time
+                _Bps = _len / _duration
+                eprint(f"{count}/{_len} {_duration} {_Bps}", end="\r")
 
         if count != inf:
             result = self.rx_buffer[
