@@ -252,8 +252,7 @@ class SerialQueue:
 
             if self.ser.inWaiting() == 0:
                 while self.tx_queue.qsize() > 0:
-                    if self.verbose:
-                        ic(self.tx_queue.qsize())
+                    ic(self.tx_queue.qsize())
                     try:
                         _exit_on_list = self.tx_queue.get(False)
                         if _exit_on_list == ["EXIT"]:
@@ -510,8 +509,7 @@ class SerialOracle:
         return result
 
     def write(self, data: bytes) -> None:
-        if self.verbose:
-            ic(data)
+        ic(data)
         self.tx_queue.put([data])
 
     def send_serial_command_direct(
@@ -561,15 +559,14 @@ class SerialOracle:
                 command.hex(),
             )
 
-        if verbose:
-            ic(
-                command,
-                len(command),
-                expect_ack,
-                byte_count_requested,
-                bytes_expected,
-                timeout,
-            )
+        ic(
+            command,
+            len(command),
+            expect_ack,
+            byte_count_requested,
+            bytes_expected,
+            timeout,
+        )
 
         if simulate:
             return b""
@@ -658,15 +655,14 @@ class SerialOracle:
                 command.hex(),
             )
 
-        if verbose:
-            ic(
-                command,
-                len(command),
-                expect_ack,
-                byte_count_requested,
-                bytes_expected,
-                timeout,
-            )
+        ic(
+            command,
+            len(command),
+            expect_ack,
+            byte_count_requested,
+            bytes_expected,
+            timeout,
+        )
 
         if simulate:
             return b""
@@ -773,10 +769,7 @@ class SerialOracle:
                 ic("TIMEOUT", timeout)
                 break
 
-        if progress:
-            eprint(f"{byte_count_requested}/{len(result)}")
-
-        if verbose == inf:
+        if gvd:
             ic(repr(result))  # all data
         ic(len(result))
         ic(byte_count_requested)
