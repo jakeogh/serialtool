@@ -483,10 +483,6 @@ class SerialOracle:
         # this constantly loops
         # if gvd:
         #    ic(count, "entering while")
-        _start_time = 0.0
-        if progress:
-            _start_time = time.time()
-            icp(count, _start_time)
         while self.bytes_available() < count:
             try:
                 data = self.rx_queue.get(False)[0]  # raises Empty
@@ -500,9 +496,7 @@ class SerialOracle:
             if progress:
                 # eprint(f"{count}/{len(self.rx_buffer)}", end="\r")
                 _len = len(self.rx_buffer)
-                _duration = time.time() - _start_time
-                _Bps = _len / _duration
-                eprint(f"{count}/{_len} {_duration} {_Bps}", end="\r")
+                eprint(f"{count}/{_len}", end="\r")
 
         if count != inf:
             result = self.rx_buffer[
