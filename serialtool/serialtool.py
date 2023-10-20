@@ -486,7 +486,7 @@ class SerialOracle:
         _start_time = 0.0
         if progress:
             _start_time = time.time()
-            icp(_start_time)
+            icp(count, _start_time)
         while self.bytes_available() < count:
             try:
                 data = self.rx_queue.get(False)[0]  # raises Empty
