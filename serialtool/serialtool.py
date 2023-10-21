@@ -710,8 +710,6 @@ class SerialOracle:
         This function performs the acknowledgement reponse checks.
         bytes_expected = None:
             no bytes expected to be read back
-        bytes_expected = True
-            byte_count_requested of arb bytes to be read back
         """
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
@@ -771,7 +769,7 @@ class SerialOracle:
                 ic("TIMEOUT", timeout)
                 break
         if progress:
-            eprint(f"{byte_count_requested}/{len(result)}")
+            eprint(f"\ndone: {byte_count_requested}/{len(result)}")
         _duration = time.time() - start_time
         if _duration > 1:
             _bytes_per_second = int(len(result) / _duration)
