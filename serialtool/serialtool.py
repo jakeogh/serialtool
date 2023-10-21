@@ -770,10 +770,12 @@ class SerialOracle:
             if (time.time() - start_time) > timeout:
                 ic("TIMEOUT", timeout)
                 break
-
+        if progress:
+            eprint(f"{byte_count_requested}/{len(result)}")
         _duration = time.time() - start_time
-        _bytes_per_second = int(len(result) / _duration)
-        icp(_duration, _bytes_per_second)
+        if _duration > 1:
+            _bytes_per_second = int(len(result) / _duration)
+            icp(_duration, _bytes_per_second)
 
         if gvd:
             ic(repr(result))  # all data
