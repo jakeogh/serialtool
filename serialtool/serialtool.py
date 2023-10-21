@@ -775,7 +775,8 @@ class SerialOracle:
         _duration = time.time() - start_time
         if _duration > 1:
             _bytes_per_second = int(len(result) / _duration)
-            icp(_duration, _bytes_per_second)
+            _bits_per_second = _bytes_per_second * 8
+            icp(_duration, _bytes_per_second, _bits_per_second)
 
         if gvd:
             ic(repr(result))  # all data
