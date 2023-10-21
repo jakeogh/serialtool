@@ -771,6 +771,8 @@ class SerialOracle:
                 ic("TIMEOUT", timeout)
                 break
 
+        eprint(len(result) / (time.time() - start_time))
+
         if gvd:
             ic(repr(result))  # all data
         ic(len(result))
