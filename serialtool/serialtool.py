@@ -479,7 +479,7 @@ class SerialOracle:
         #    ic(result)
         return result
 
-    def _read(self, count=inf, *, progress: bool = False):
+    def _read(self, *, count: int, progress: bool = False):
         # this constantly loops
         # if gvd:
         #    ic(count, "entering while")
@@ -497,6 +497,7 @@ class SerialOracle:
                 # eprint(f"{count}/{len(self.rx_buffer)}", end="\r")
                 _len = len(self.rx_buffer)
                 eprint(f"{count}/{_len}", end="\r")
+        icp('exiting while')
 
         if count != inf:
             result = self.rx_buffer[
@@ -741,7 +742,7 @@ class SerialOracle:
             start_time = time.time()
             ic(start_time, timeout)
             while True:
-                read_bytes = self._read(inf)  # aka byte_count_requested
+                read_bytes = self._read(count=inf)  # aka byte_count_requested
                 if verbose and read_bytes:
                     ic(read_bytes)
                 all_bytes += read_bytes
@@ -760,7 +761,7 @@ class SerialOracle:
 
             if bytes_needed > 0:
                 try:
-                    result += self._read(bytes_needed, progress=progress)
+                    result += self._read(count=bytes_needed, progress=progress)
                 except Empty as e:
                     # ic("got exception Empty:", e)
                     pass  # the timeout will break loop
