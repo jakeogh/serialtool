@@ -778,8 +778,9 @@ class SerialOracle:
 
         if gvd:
             ic(repr(result))  # all data
-        ic(len(result))
-        ic(byte_count_requested)
+        ic(len(result), byte_count_requested)
+        if byte_count_requested > 10:
+            icp(result[-10:])
 
         if bytes_expected:
             if len(result) == 0:
