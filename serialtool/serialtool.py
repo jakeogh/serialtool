@@ -503,7 +503,7 @@ class SerialOracle:
     def send_serial_command_direct(
         self,
         command: bytes,
-        byte_count_requested: None | int,
+        byte_count_requested: None | int = None,
         expected_response: None | bytes = None,
         timeout: None | int = None,
         echo: bool = True,
