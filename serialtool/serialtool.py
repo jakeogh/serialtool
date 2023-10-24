@@ -582,7 +582,7 @@ class SerialOracle:
             echo = True
         ic(command, argument, expect_ack, timeout)
         assert isinstance(command, bytes)
-        assert isinstance(argument, bytes)
+        # assert isinstance(argument, bytes)
 
         if expect_ack:
             assert not byte_count_requested
