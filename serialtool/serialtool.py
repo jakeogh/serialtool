@@ -28,7 +28,6 @@ from io import BufferedReader
 from math import inf
 from multiprocessing import Process
 from multiprocessing import Queue
-from multiprocessing import get_context
 from pathlib import Path
 from queue import Empty
 
@@ -40,7 +39,8 @@ from asserttool import icp
 from clicktool import click_add_options
 from clicktool import click_global_options
 from clicktool import tvicgvd
-from cycloidal_client.command_dict import COMMAND_DICT
+from cycloidal_client.ctia_construct_serial_command_and_response import \
+    construct_serial_command
 from cycloidal_client.exceptions import SerialNoResponseError
 from eprint import eprint
 from globalverbose import gvd
@@ -48,8 +48,11 @@ from serial.tools import list_ports
 from timestamptool import get_int_timestamp
 from timestamptool import get_timestamp
 
+# from cycloidal_client.command_dict import COMMAND_DICT
+
 # from contextlib import ExitStack
 # from shutil import get_terminal_size
+# from multiprocessing import get_context
 
 # import subprocess
 # import atexit
@@ -59,17 +62,17 @@ DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
 
 
-def construct_serial_command(
-    command: bytes,
-    argument: None | bytes = None,
-):
-    command_name = lookup_two_byte_command_name(two_bytes=command)
-    ic(command, command_name)
-    if argument:
-        command = command + argument
-
-    command = b"\x10\x02" + command + b"\x10\x03"
-    return command
+# def construct_serial_command(
+#    command: bytes,
+#    argument: None | bytes = None,
+# ):
+#    command_name = lookup_two_byte_command_name(two_bytes=command)
+#    ic(command, command_name)
+#    if argument:
+#        command = command + argument
+#
+#    command = b"\x10\x02" + command + b"\x10\x03"
+#    return command
 
 
 def generate_serial_port_help():
@@ -84,17 +87,17 @@ def generate_serial_port_help():
     return help_text
 
 
-def lookup_two_byte_command_name(two_bytes: bytes):
-    assert isinstance(two_bytes, bytes)
-    two_bytes_str = two_bytes.split(b"0x")[-1].decode("utf8")
-    for key, value in COMMAND_DICT.items():
-        # value = COMMAND_DICT[key]
-        value_hex_str = value.split("0x")[-1]
-        value_bytes = bytearray.fromhex(value_hex_str)
-        value_bytes_str = value_bytes.decode("utf8")
-        if two_bytes_str == value_bytes_str:
-            return key
-    raise ValueError(two_bytes)
+# def lookup_two_byte_command_name(two_bytes: bytes):
+#    assert isinstance(two_bytes, bytes)
+#    two_bytes_str = two_bytes.split(b"0x")[-1].decode("utf8")
+#    for key, value in COMMAND_DICT.items():
+#        # value = COMMAND_DICT[key]
+#        value_hex_str = value.split("0x")[-1]
+#        value_bytes = bytearray.fromhex(value_hex_str)
+#        value_bytes_str = value_bytes.decode("utf8")
+#        if two_bytes_str == value_bytes_str:
+#            return key
+#    raise ValueError(two_bytes)
 
 
 def wait_for_serial_queue(
@@ -162,7 +165,6 @@ class SerialQueue:
     baud_rate: int = 460800
     default_timeout: float = 1.0
     hardware_buffer_size: int = 4096
-    verbose: bool | int | float = False
 
     def listen_serial(self):
         if not self.serial_port:
@@ -284,7 +286,6 @@ def launch_serial_queue_process(
     serial_data_dir: Path,
     baud_rate: int,
     log_serial_data: bool,
-    verbose: bool = False,
 ):
     ready_signal = str(time.time())
     serial_queue = SerialQueue(
@@ -296,12 +297,6 @@ def launch_serial_queue_process(
         log_serial_data=log_serial_data,
         ready_signal=ready_signal,
     )
-    # if I use this context, calling start() throws:
-    # RuntimeError: A SemLock created in a fork context is being shared with a process in a spawn context. This is not supported. Please use the same context to create multiprocessing objects and Process.
-    # mp_context = get_context("spawn")
-    # serial_queue_process = mp_context.Process(
-    #    target=serial_queue.listen_serial, args=()
-    # )
     serial_queue_process = Process(target=serial_queue.listen_serial, args=())
     serial_queue_process.start()
     while True:
@@ -322,7 +317,6 @@ def print_serial_oracle(
     timestamp: bool,
     read_tx_from_fifo: bool,
     show_bytes: bool = False,
-    verbose: bool = False,
 ):
     last_queue_size = None
     queue_size = 0
@@ -378,7 +372,6 @@ def print_serial_output(
     read_tx_from_fifo: bool,
     baud_rate: int = 460800,
     show_bytes: bool = False,
-    verbose: bool = False,
 ):
     rx_queue = Queue()
     tx_queue = Queue()
@@ -436,7 +429,6 @@ class SerialOracle:
     log_serial_data: bool
     serial_port: str
     ipython_on_communication_error: bool
-    verbose: bool | int | float = False
 
     def __attrs_post_init__(self):
         self.rx_queue = Queue()
@@ -456,13 +448,6 @@ class SerialOracle:
         self.serial_queue_process.terminate()
         self.serial_queue_process.kill()
         self.serial_queue_process.close()
-        #     File "/usr/lib/python3.11/site-packages/cycloidal_client/cycloidal_client.py", line 949, in command_serial
-        #       serial_oracle.terminate()
-        #     File "/usr/lib/python3.11/site-packages/serialtool/serialtool.py", line 447, in terminate
-        #       self.serial_queue_process.close()
-        #     File "/usr/lib/python3.11/multiprocessing/process.py", line 181, in close
-        #       raise ValueError("Cannot close a process while it is still running. "
-        #   ValueError: Cannot close a process while it is still running. You should first call join() or terminate().
 
     def status(self):
         ic(self.rx_queue.qsize())
@@ -497,7 +482,7 @@ class SerialOracle:
                 # eprint(f"{count}/{len(self.rx_buffer)}", end="\r")
                 _len = len(self.rx_buffer)
                 eprint(f"{count}/{_len}", end="\r")
-        icp('exiting while')
+        icp("exiting while")
 
         if count != inf:
             result = self.rx_buffer[
@@ -518,88 +503,68 @@ class SerialOracle:
     def send_serial_command_direct(
         self,
         command: bytes,
-        expect_ack: bool,
-        byte_count_requested=False,
-        bytes_expected=None,
+        byte_count_requested: None | int,
+        expected_response: None | bytes = None,
         timeout: None | int = None,
-        no_read: bool = False,
-        verbose: bool = False,
         echo: bool = True,
-        simulate: bool = False,
     ):
-        if simulate:
-            echo = True
-        ic(command, expect_ack, timeout)
-        if not isinstance(command, bytes):
-            raise TypeError(f"type(command) must be bytes, not {type(command)}")
+        ic(command, expected_response, timeout)
+        assert isinstance(command, bytes)
 
-        if expect_ack:
-            assert not byte_count_requested
-            byte_count_requested = 3
-            assert not bytes_expected
-            bytes_expected = b"\x06" + command[2:4]  # uug
-            assert not no_read
+        if expected_response:
             assert byte_count_requested != inf
+            assert not byte_count_requested  # will be calculated instead
 
         if byte_count_requested:
-            assert not no_read
+            assert not expected_response
 
-        if no_read:
-            assert not byte_count_requested
-            assert byte_count_requested != inf
-        elif byte_count_requested == inf:
-            assert not no_read
-        else:
-            assert byte_count_requested
+        _byte_count_requested = 0
+        if expected_response:
+            _byte_count_requested = len(expected_response)
 
         if echo:
             eprint(
-                f"{timeout=}",
-                f"{expect_ack=}",
+                f"{command=}",
                 f"{len(command)=}",
-                command,
-                f"{byte_count_requested=}",
-                command.hex(),
+                f"{command.hex()=}",
+                f"{timeout=}",
+                f"{_byte_count_requested=}",
+                end="",
             )
+            if expected_response:
+                eprint(f"{expected_response=}", end="")
+            eprint()
 
         ic(
             command,
             len(command),
-            expect_ack,
             byte_count_requested,
-            bytes_expected,
+            expected_response,
             timeout,
         )
 
-        if simulate:
-            return b""
-
         self.write(command)
-        if not no_read:
-            if expect_ack:
-                if not timeout:
-                    timeout = 10
-            try:
-                rx_bytes = self.read_command_result(
-                    byte_count_requested=byte_count_requested,
-                    bytes_expected=bytes_expected,
-                    timeout=timeout,
-                )
-            except ValueError as e:
-                ic(e)
-                raise e
 
-            if expect_ack:
-                if rx_bytes != bytes_expected:
-                    ic(rx_bytes)
-                    ic(bytes_expected)
-                    raise ValueError(rx_bytes)
-            if echo:
-                eprint(f"{len(rx_bytes)=}")
-                # if len(rx_bytes) < 10:
-                eprint(f"{repr(rx_bytes)=}")
-            return rx_bytes
-        return b""
+        try:
+            rx_bytes = self.read_command_result(
+                byte_count_requested=_byte_count_requested,
+                bytes_expected=expected_response,
+                timeout=timeout,
+            )
+        except ValueError as e:
+            ic(e)
+            raise e
+
+        if expected_response:
+            if rx_bytes != expected_response:
+                ic(rx_bytes)
+                ic(expected_response)
+                raise ValueError(rx_bytes)
+        if echo:
+            eprint(f"{len(rx_bytes)=}")
+            # if len(rx_bytes) < 10:
+            eprint(f"{repr(rx_bytes)=}")
+        return rx_bytes
 
     def send_serial_command(
         self,
@@ -610,20 +575,14 @@ class SerialOracle:
         bytes_expected=None,
         timeout: None | int = None,
         no_read: bool = False,
-        verbose: bool = False,
         echo: bool = True,
         simulate: bool = False,
     ):
         if simulate:
             echo = True
         ic(command, argument, expect_ack, timeout)
-        if not isinstance(command, bytes):
-            raise TypeError(f"type(command) must be bytes, not {type(command)}")
-        if argument:
-            if not isinstance(argument, bytes):
-                raise TypeError(
-                    f"type(argument) must be bytes, not {type(argument)}",
-                )
+        assert isinstance(command, bytes)
+        assert isinstance(argument, bytes)
 
         if expect_ack:
             assert not byte_count_requested
@@ -703,7 +662,6 @@ class SerialOracle:
         bytes_expected: None | bytes = None,
         expect_empty: bool = False,
         timeout: None | float = None,
-        verbose: bool = False,
         progress: bool = False,
     ):
         """
@@ -743,7 +701,7 @@ class SerialOracle:
             ic(start_time, timeout)
             while True:
                 read_bytes = self._read(count=inf)  # aka byte_count_requested
-                if verbose and read_bytes:
+                if gvd and read_bytes:
                     ic(read_bytes)
                 all_bytes += read_bytes
                 if (time.time() - start_time) > timeout:
