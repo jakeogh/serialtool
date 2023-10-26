@@ -452,23 +452,14 @@ class SerialOracle:
     def status(self):
         ic(self.rx_queue.qsize())
         ic(len(self.rx_buffer))
-        ic(self.bytes_available())
+        ic(self.rx_buffer_bytes_available())
 
-    def bytes_available(self):
-        # this constantly loops
-        # if gvd:
-        #    ic(self.rx_queue.qsize())
-        #    ic(len(self.rx_buffer))
+    def rx_buffer_bytes_available(self):
         result = len(self.rx_buffer) - self.rx_buffer_cursor
-        # if gvd:
-        #    ic(result)
         return result
 
     def _read(self, *, count: int, progress: bool = False):
-        # this constantly loops
-        # if gvd:
-        #    ic(count, "entering while")
-        while self.bytes_available() < count:
+        while self.rx_buffer_bytes_available() < count:
             try:
                 data = self.rx_queue.get(False)[0]  # raises Empty
                 self.rx_buffer.extend(data)
@@ -673,7 +664,6 @@ class SerialOracle:
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
-        # ic(byte_count_requested, bytes_expected, expect_empty, timeout)
         eprint(
             f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=}"
         )
@@ -693,6 +683,7 @@ class SerialOracle:
             return
 
         if byte_count_requested == inf:  # could be 0, not raising NoResponseError
+            assert False
             assert not expect_empty
             assert timeout > 0
             assert bytes_expected is None
