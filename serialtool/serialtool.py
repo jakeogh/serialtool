@@ -470,21 +470,24 @@ class SerialOracle:
                     ic("got expected exception Empty, breaking")
                 break
             if progress:
-                # eprint(f"{count}/{len(self.rx_buffer)}", end="\r")
                 _len = len(self.rx_buffer)
                 eprint(f"{count}/{_len} {_len-count}            ", end="\r")
         icp("exiting while")
 
-        if count != inf:
-            result = self.rx_buffer[
-                self.rx_buffer_cursor : self.rx_buffer_cursor + count
-            ]
-        else:
-            result = self.rx_buffer[self.rx_buffer_cursor :]
-        if gvd:
-            ic(result)
-        # self.rx_buffer_cursor += count
-        self.rx_buffer_cursor += len(result)  # handle the inf case
+        # if count != inf:
+        #    result = self.rx_buffer[
+        #        self.rx_buffer_cursor : self.rx_buffer_cursor + count
+        #    ]
+        # else:
+        #    result = self.rx_buffer[self.rx_buffer_cursor :]
+        # if gvd:
+        #    ic(result)
+
+        # self.rx_buffer_cursor += len(result)  # handle the inf case
+        # return result
+
+        result = bytes(self.rx_buffer)
+        self.rx_buffer = bytearray()
         return result
 
     def write(self, data: bytes) -> None:
