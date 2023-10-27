@@ -675,6 +675,7 @@ class SerialOracle:
                 raise ValueError(result)
 
         if ending_bytes_expected:
+            icp(result, ending_bytes_expected)
             assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
             return result[: len(ending_bytes_expected) + 1]
 
