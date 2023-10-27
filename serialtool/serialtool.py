@@ -484,7 +484,7 @@ class SerialOracle:
                     f"{count}/{_len} {_len-count}     {int(_len/count*100)}%       ",
                     end="\r",
                 )
-        icp("exiting while")
+        # icp("exiting while")
 
         if count != inf:
             result = self.rx_buffer[
