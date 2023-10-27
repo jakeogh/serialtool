@@ -480,7 +480,10 @@ class SerialOracle:
                 break
             if progress:
                 _len = len(self.rx_buffer)
-                eprint(f"{count}/{_len} {_len-count}            ", end="\r")
+                eprint(
+                    f"{count}/{_len} {_len-count}     {int(_len/count*100)}%       ",
+                    end="\r",
+                )
         icp("exiting while")
 
         if count != inf:
