@@ -676,9 +676,8 @@ class SerialOracle:
 
         if ending_bytes_expected:
             assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
+            return result[: len(ending_bytes_expected) + 1]
 
-        if result.startswith(b"\x06"):
-            ic(result)
         return result
 
     def send_serial_command(
