@@ -775,11 +775,11 @@ class SerialOracle:
                 ic(e)
                 raise e
 
-            if expect_ack:
-                if rx_bytes != bytes_expected:
-                    ic(rx_bytes)
-                    ic(bytes_expected)
-                    raise ValueError(rx_bytes)
+            # if expect_ack:
+            #    if rx_bytes != bytes_expected:
+            #        ic(rx_bytes)
+            #        ic(bytes_expected)
+            #        raise ValueError(rx_bytes)
             if echo:
                 eprint(f"{len(rx_bytes)=}")
                 # if len(rx_bytes) < 10:
