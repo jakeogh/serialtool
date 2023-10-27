@@ -721,8 +721,6 @@ class SerialOracle:
             assert byte_count_requested != inf
         elif byte_count_requested == inf:
             assert not no_read
-        else:
-            assert byte_count_requested or data_bytes_expected
 
         _command = construct_serial_command(command=command, argument=argument)
 
