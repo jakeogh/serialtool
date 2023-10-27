@@ -582,6 +582,13 @@ class SerialOracle:
         bytes_expected = None:
             no bytes expected to be read back
         """
+        icp(
+            byte_count_requested,
+            bytes_expected,
+            expect_empty,
+            ending_bytes_expected,
+            timeout,
+        )
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
@@ -755,12 +762,12 @@ class SerialOracle:
         if data_bytes_expected:
             assert not byte_count_requested
             byte_count_requested = 2 + data_bytes_expected
-            icp(byte_count_requested)
 
         if expect_ack:
             byte_count_requested = byte_count_requested + 3
             ending_bytes_expected = b"\x06" + command
 
+        icp(byte_count_requested)
         if not no_read:
             if expect_ack:
                 if not timeout:
