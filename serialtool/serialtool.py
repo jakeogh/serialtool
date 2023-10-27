@@ -599,7 +599,7 @@ class SerialOracle:
         #    assert len(bytes_expected) == byte_count_requested
         if bytes_expected:
             assert byte_count_requested is None
-            byte_count_requested == len(bytes_expected)
+            byte_count_requested = len(bytes_expected)
 
         if bytes_expected:
             assert not ending_bytes_expected
