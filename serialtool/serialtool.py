@@ -586,7 +586,7 @@ class SerialOracle:
             assert isinstance(bytes_expected, bytes)
 
         eprint(
-            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=}"
+            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=} {ending_bytes_expected=}"
         )
 
         if bytes_expected and byte_count_requested:
