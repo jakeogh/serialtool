@@ -709,9 +709,7 @@ class SerialOracle:
 
         if expect_ack:
             assert not byte_count_requested
-            byte_count_requested = 3
             assert not bytes_expected
-            bytes_expected = b"\x06" + command
             assert not no_read
             assert byte_count_requested != inf
 
@@ -726,7 +724,7 @@ class SerialOracle:
         else:
             assert byte_count_requested
 
-        command = construct_serial_command(command=command, argument=argument)
+        _command = construct_serial_command(command=command, argument=argument)
 
         if echo:
             _argument_repr = repr(argument)[0:10]
@@ -735,14 +733,14 @@ class SerialOracle:
                 f"{expect_ack=}",
                 f"{len(command)=}",
                 f"argument={_argument_repr}",
-                command,
+                _command,
                 f"{byte_count_requested=}",
-                command.hex(),
+                _command.hex(),
             )
 
         ic(
-            command,
-            len(command),
+            _command,
+            len(_command),
             expect_ack,
             byte_count_requested,
             bytes_expected,
@@ -753,16 +751,21 @@ class SerialOracle:
             return b""
 
         self.reset_rx()
-        self.write(command)
+        self.write(_command)
 
         if data_bytes_expected:
-            byte_count_requested = (2 + data_bytes_expected) + byte_count_requested
+            assert not byte_count_requested
+            byte_count_requested = 2 + data_bytes_expected
+            icp(byte_count_requested)
+
+        if expect_ack:
+            byte_count_requested = byte_count_requested + 3
+            ending_bytes_expected = b"\x06" + command
 
         if not no_read:
             if expect_ack:
                 if not timeout:
                     timeout = 1
-                ending_bytes_expected = b"\x06" + command
             try:
                 rx_bytes = self.read_command_result(
                     byte_count_requested=byte_count_requested,
