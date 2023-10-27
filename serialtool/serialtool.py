@@ -571,7 +571,6 @@ class SerialOracle:
         *,
         byte_count_requested: None | int = None,
         bytes_expected: None | bytes = None,
-        expect_empty: bool = False,
         ending_bytes_expected: None | bytes = None,
         timeout: None | float = None,
         progress: bool = False,
@@ -585,7 +584,6 @@ class SerialOracle:
         icp(
             byte_count_requested,
             bytes_expected,
-            expect_empty,
             ending_bytes_expected,
             timeout,
         )
@@ -593,7 +591,7 @@ class SerialOracle:
             assert isinstance(bytes_expected, bytes)
 
         eprint(
-            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=} {ending_bytes_expected=}"
+            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=} {ending_bytes_expected=}"
         )
 
         # better to force non-specificaion of the count in the calling code
@@ -614,7 +612,6 @@ class SerialOracle:
             ic(timeout)
 
         if byte_count_requested == 0:
-            assert expect_empty
             assert bytes_expected is None
             bytes_expected = b""
             assert self.rx_queue.qsize() == 0
@@ -622,7 +619,6 @@ class SerialOracle:
 
         if byte_count_requested == inf:  # could be 0, not raising NoResponseError
             assert False
-            assert not expect_empty
             assert timeout > 0
             assert bytes_expected is None
             all_bytes = b""
