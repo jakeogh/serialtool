@@ -569,7 +569,7 @@ class SerialOracle:
     def read_command_result(
         self,
         *,
-        byte_count_requested: int,
+        byte_count_requested: None | int = None,
         bytes_expected: None | bytes = None,
         expect_empty: bool = False,
         ending_bytes_expected: None | bytes = None,
@@ -596,8 +596,12 @@ class SerialOracle:
             f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {expect_empty=}, {timeout=} {ending_bytes_expected=}"
         )
 
-        if bytes_expected and byte_count_requested:
-            assert len(bytes_expected) == byte_count_requested
+        # better to force non-specificaion of the count in the calling code
+        # if bytes_expected and byte_count_requested:
+        #    assert len(bytes_expected) == byte_count_requested
+        if bytes_expected:
+            assert byte_count_requested is None
+            byte_count_requested == len(bytes_expected)
 
         if bytes_expected:
             assert not ending_bytes_expected
