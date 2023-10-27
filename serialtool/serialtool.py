@@ -761,7 +761,8 @@ class SerialOracle:
 
         if data_bytes_expected:
             assert not byte_count_requested
-            byte_count_requested = 2 + data_bytes_expected
+            # b"\x10\x02" + data_bytes_expected + b"\x10\x03"
+            byte_count_requested = 2 + data_bytes_expected + 2
 
         if expect_ack:
             byte_count_requested = byte_count_requested + 3
