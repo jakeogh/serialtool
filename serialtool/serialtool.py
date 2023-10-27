@@ -24,7 +24,6 @@ import errno
 import os
 import sys
 import time
-from io import BufferedReader
 from math import inf
 from multiprocessing import Process
 from multiprocessing import Queue
@@ -56,6 +55,7 @@ from timestamptool import get_timestamp
 
 # import subprocess
 # import atexit
+# from io import BufferedReader
 
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
@@ -458,6 +458,15 @@ class SerialOracle:
         result = len(self.rx_buffer) - self.rx_buffer_cursor
         return result
 
+    def reset_rx(self):
+        self.rx_buffer = bytearray()
+        self.rx_buffer_cursor = 0
+        try:
+            while True:
+                self.rx_queue.get(False)[0]  # raises Empty
+        except Empty as e:
+            pass
+
     def _read(self, *, count: int, progress: bool = False):
         while self.rx_buffer_bytes_available() < count:
             try:
@@ -474,20 +483,16 @@ class SerialOracle:
                 eprint(f"{count}/{_len} {_len-count}            ", end="\r")
         icp("exiting while")
 
-        # if count != inf:
-        #    result = self.rx_buffer[
-        #        self.rx_buffer_cursor : self.rx_buffer_cursor + count
-        #    ]
-        # else:
-        #    result = self.rx_buffer[self.rx_buffer_cursor :]
-        # if gvd:
-        #    ic(result)
+        if count != inf:
+            result = self.rx_buffer[
+                self.rx_buffer_cursor : self.rx_buffer_cursor + count
+            ]
+        else:
+            result = self.rx_buffer[self.rx_buffer_cursor :]
+        if gvd:
+            ic(result)
 
-        # self.rx_buffer_cursor += len(result)  # handle the inf case
-        # return result
-
-        result = bytes(self.rx_buffer)
-        self.rx_buffer = bytearray()
+        self.rx_buffer_cursor += len(result)
         return result
 
     def write(self, data: bytes) -> None:
@@ -537,6 +542,7 @@ class SerialOracle:
             timeout,
         )
 
+        self.reset_rx()
         self.write(command)
 
         try:
@@ -623,6 +629,7 @@ class SerialOracle:
         if simulate:
             return b""
 
+        self.reset_rx()
         self.write(command)
         if not no_read:
             if expect_ack:
