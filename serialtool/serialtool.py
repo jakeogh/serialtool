@@ -47,8 +47,6 @@ from serial.tools import list_ports
 from timestamptool import get_int_timestamp
 from timestamptool import get_timestamp
 
-# from cycloidal_client.command_dict import COMMAND_DICT
-
 # from contextlib import ExitStack
 # from shutil import get_terminal_size
 # from multiprocessing import get_context
@@ -574,27 +572,24 @@ class SerialOracle:
         *,
         byte_count_requested: None | int = None,
         bytes_expected: None | bytes = None,
-        ending_bytes_expected: None | bytes = None,
         timeout: None | float = None,
         progress: bool = False,
     ):
         """
         Reads byte_count_requested number of bytes over serial and compares it to bytes_expected if given.
-        This function performs the acknowledgement reponse checks.
         bytes_expected = None:
             no bytes expected to be read back
         """
         icp(
             byte_count_requested,
             bytes_expected,
-            ending_bytes_expected,
             timeout,
         )
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
         eprint(
-            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=} {ending_bytes_expected=}"
+            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
         )
 
         # better to force non-specificaion of the count in the calling code
@@ -603,12 +598,6 @@ class SerialOracle:
         if bytes_expected:
             assert byte_count_requested is None
             byte_count_requested = len(bytes_expected)
-
-        if bytes_expected:
-            assert not ending_bytes_expected
-
-        if ending_bytes_expected:
-            assert not bytes_expected
 
         if not timeout:
             timeout = inf
@@ -684,11 +673,31 @@ class SerialOracle:
                 ic("About to raise ValueError on result:", result)
                 raise ValueError(result)
 
-        if ending_bytes_expected:
-            icp(len(result), result, ending_bytes_expected)
-            assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
-            return result[: len(ending_bytes_expected) + 1]
+        ic(result)
+        return result
 
+    def extract_command_result(
+        self,
+        two_byte_command: bytes,
+        result: bytes,
+        expect_ack: bool,
+        data_bytes_expected: int,
+    ):
+        ic(two_byte_command, result, expect_ack, data_bytes_expected)
+        assert isinstance(two_byte_command, bytes)
+        if expect_ack:
+            ending_bytes_expected = b"\x06" + two_byte_command
+            assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
+            result = result[:-3]
+
+        if data_bytes_expected:
+            assert len(result) - 4 == data_bytes_expected
+            ic(result[0:2])
+            assert result[0:2] == b"\x10\x02"
+            result = result[2:]
+            assert result[-2:] == b"\x10\x03"
+            result = result[:-2]
+        ic(result)
         return result
 
     def send_serial_command(
@@ -704,13 +713,10 @@ class SerialOracle:
         echo: bool = True,
         simulate: bool = False,
     ):
-        if simulate:
+        if simulate or gvd:
             echo = True
         ic(command, argument, expect_ack, timeout)
         assert isinstance(command, bytes)
-        # assert isinstance(argument, bytes)
-
-        ending_bytes_expected = None
 
         if data_bytes_expected:
             assert not byte_count_requested
@@ -751,9 +757,12 @@ class SerialOracle:
             _command,
             len(_command),
             expect_ack,
+            argument,
             byte_count_requested,
             bytes_expected,
+            data_bytes_expected,
             timeout,
+            no_read,
         )
 
         if simulate:
@@ -769,7 +778,6 @@ class SerialOracle:
 
         if expect_ack:
             byte_count_requested = byte_count_requested + 3
-            ending_bytes_expected = b"\x06" + command
 
         icp(byte_count_requested)
         if not no_read:
@@ -780,18 +788,19 @@ class SerialOracle:
                 rx_bytes = self.read_command_result(
                     byte_count_requested=byte_count_requested,
                     bytes_expected=bytes_expected,
-                    ending_bytes_expected=ending_bytes_expected,
                     timeout=timeout,
                 )
             except ValueError as e:
                 ic(e)
                 raise e
 
-            # if expect_ack:
-            #    if rx_bytes != bytes_expected:
-            #        ic(rx_bytes)
-            #        ic(bytes_expected)
-            #        raise ValueError(rx_bytes)
+            rx_bytes = self.extract_command_result(
+                two_byte_command=command,
+                result=rx_bytes,
+                expect_ack=expect_ack,
+                data_bytes_expected=data_bytes_expected,
+            )
+
             if echo:
                 eprint(f"{len(rx_bytes)=}")
                 # if len(rx_bytes) < 10:
