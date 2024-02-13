@@ -650,13 +650,14 @@ class SerialOracle:
         if _duration > 1:
             _bytes_per_second = int(len(result) / _duration)
             _bits_per_second = _bytes_per_second * 8
-            icp(_duration, _bytes_per_second, _bits_per_second)
+            ic(_duration, _bytes_per_second, _bits_per_second)
 
         if gvd:
             ic(repr(result))  # all data
         ic(len(result), byte_count_requested)
         if byte_count_requested > 10:
-            icp(result[-10:])
+            if gvd:
+                icp(result[-10:])
 
         if bytes_expected:
             if len(result) == 0:
