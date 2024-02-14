@@ -780,7 +780,7 @@ class SerialOracle:
         if expect_ack:
             byte_count_requested = byte_count_requested + 3
 
-        icp(byte_count_requested)
+        # icp(byte_count_requested)
         if not no_read:
             if expect_ack:
                 if not timeout:
