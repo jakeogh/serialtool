@@ -563,9 +563,9 @@ class SerialOracle:
                 ic(expected_response)
                 raise ValueError(rx_bytes)
         if echo:
-            eprint(f"{len(rx_bytes)=}")
-            # if len(rx_bytes) < 10:
-            eprint(f"{repr(rx_bytes)=}")
+            eprint(
+                f"serialtool: send_serial_command_direct() {len(rx_bytes)=} {repr(rx_bytes)=}"
+            )
         return rx_bytes
 
     def read_command_result(
@@ -805,9 +805,9 @@ class SerialOracle:
             )
 
             if echo:
-                eprint(f"{len(rx_bytes)=}")
-                # if len(rx_bytes) < 10:
-                eprint(f"{repr(rx_bytes)=}")
+                eprint(
+                    f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                )
             return rx_bytes
 
 
