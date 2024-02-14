@@ -580,7 +580,7 @@ class SerialOracle:
         bytes_expected = None:
             no bytes expected to be read back
         """
-        icp(
+        ic(
             byte_count_requested,
             bytes_expected,
             timeout,
@@ -650,7 +650,7 @@ class SerialOracle:
         if _duration > 1:
             _bytes_per_second = int(len(result) / _duration)
             _bits_per_second = _bytes_per_second * 8
-            ic(_duration, _bytes_per_second, _bits_per_second)
+            eprint(f"{_duration=}, {_bytes_per_second=}, {_bits_per_second=}")
 
         if gvd:
             ic(repr(result))  # all data
