@@ -524,6 +524,7 @@ class SerialOracle:
 
         if echo:
             eprint(
+                "serialtool: send_serial_command_direct()",
                 f"{command=}",
                 f"{len(command)=}",
                 f"{command.hex()=}",
@@ -589,7 +590,7 @@ class SerialOracle:
             assert isinstance(bytes_expected, bytes)
 
         eprint(
-            f"read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
+            f"serialtool: read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
         )
 
         # better to force non-specificaion of the count in the calling code
@@ -745,6 +746,7 @@ class SerialOracle:
         if echo:
             _argument_repr = repr(argument)[0:10]
             eprint(
+                "serialtool: send_serial_command()",
                 f"{timeout=}",
                 f"{expect_ack=}",
                 f"{len(command)=}",
