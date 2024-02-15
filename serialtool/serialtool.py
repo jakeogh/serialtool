@@ -505,7 +505,7 @@ class SerialOracle:
         command: bytes,
         byte_count_requested: None | int = None,
         expected_response: None | bytes = None,
-        timeout: None | int = None,
+        timeout: None | float = None,
         echo: bool = True,
     ):
         ic(command, expected_response, timeout)
@@ -710,7 +710,7 @@ class SerialOracle:
         data_bytes_expected: int = 0,
         byte_count_requested=False,
         bytes_expected=None,
-        timeout: None | int = None,
+        timeout: None | float = None,
         no_read: bool = False,
         echo: bool = True,
         simulate: bool = False,
