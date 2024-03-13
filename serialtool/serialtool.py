@@ -465,7 +465,10 @@ class SerialOracle:
         except Empty as e:
             pass
 
-    def _read(self, *, count: int, progress: bool = False):
+    # accepts a float but only inf
+    def _read(self, *, count: int | float, progress: bool = False):
+        if isinstance(count, float):
+            assert count == inf
         while self.rx_buffer_bytes_available() < count:
             try:
                 data = self.rx_queue.get(False)[0]  # raises Empty
