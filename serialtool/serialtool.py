@@ -554,7 +554,8 @@ class SerialOracle:
                 f"argument={_argument_repr}",
                 f"{data_bytes_expected=}",
                 f"{byte_count_requested=}",
-                f"{bytes_expected=}" f"{timeout=}",
+                f"{bytes_expected=}",
+                f"{timeout=}",
                 f"{no_read}",
                 f"{_command.hex()=}",
             )
