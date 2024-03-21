@@ -556,7 +556,7 @@ class SerialOracle:
                 f"{byte_count_requested=}",
                 f"{bytes_expected=}",
                 f"{timeout=}",
-                f"{no_read}",
+                f"{no_read=}",
                 f"{_command.hex()=}",
             )
 
