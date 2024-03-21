@@ -806,6 +806,9 @@ class SerialOracle:
         assert isinstance(two_byte_command, bytes)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
+            eprint(
+                f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
+            )
             assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
             result = result[:-3]
 
