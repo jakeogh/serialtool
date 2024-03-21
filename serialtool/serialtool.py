@@ -503,6 +503,117 @@ class SerialOracle:
         ic(data)
         self.tx_queue.put([data])
 
+    def send_serial_command(
+        self,
+        command: bytes,
+        expect_ack: bool,
+        argument: None | bytes = None,
+        data_bytes_expected: int = 0,
+        byte_count_requested=False,
+        bytes_expected=None,
+        timeout: None | float = None,
+        no_read: bool = False,
+        echo: bool = True,
+        simulate: bool = False,
+    ):
+        if simulate or gvd:
+            echo = True
+        ic(command, argument, expect_ack, timeout)
+        assert isinstance(command, bytes)
+
+        if data_bytes_expected:
+            assert not byte_count_requested
+            assert byte_count_requested != inf
+            assert not bytes_expected
+            assert not no_read
+
+        if expect_ack:
+            assert not byte_count_requested
+            assert not bytes_expected
+            assert not no_read
+            assert byte_count_requested != inf
+
+        if byte_count_requested:
+            assert not no_read
+
+        if no_read:
+            assert not byte_count_requested
+            assert byte_count_requested != inf
+        elif byte_count_requested == inf:
+            assert not no_read
+
+        _command = construct_serial_command(command=command, argument=argument)
+
+        if echo:
+            _argument_repr = repr(argument)[0:10]
+            eprint(
+                "serialtool: send_serial_command()",
+                f"{len(command)=}",
+                f"{_command=}",
+                f"{expect_ack=}",
+                f"argument={_argument_repr}",
+                f"{data_bytes_expected=}",
+                f"{byte_count_requested=}",
+                f"{bytes_expected=}" f"{timeout=}",
+                f"{no_read}",
+                f"{_command.hex()=}",
+            )
+
+        ic(
+            _command,
+            len(_command),
+            expect_ack,
+            argument,
+            byte_count_requested,
+            bytes_expected,
+            data_bytes_expected,
+            timeout,
+            no_read,
+        )
+
+        if simulate:
+            return b""
+
+        self.reset_rx()
+        self.write(_command)
+
+        if data_bytes_expected:
+            assert not byte_count_requested
+            # b"\x10\x02" + data_bytes_expected + b"\x10\x03"
+            byte_count_requested = 2 + data_bytes_expected + 2
+
+        if expect_ack:
+            # in py, "False + 3 = 3" since "False == 0" is True
+            byte_count_requested = byte_count_requested + 3
+
+        # icp(byte_count_requested)
+        if not no_read:
+            # if expect_ack:
+            #    if not timeout:
+            #        timeout = 1
+            try:
+                rx_bytes = self.read_command_result(
+                    byte_count_requested=byte_count_requested,
+                    bytes_expected=bytes_expected,
+                    timeout=timeout,
+                )
+            except ValueError as e:
+                ic(e)
+                raise e
+
+            rx_bytes = self.extract_command_result(
+                two_byte_command=command,
+                result=rx_bytes,
+                expect_ack=expect_ack,
+                data_bytes_expected=data_bytes_expected,
+            )
+
+            if echo:
+                eprint(
+                    f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                )
+            return rx_bytes
+
     def send_serial_command_direct(
         self,
         command: bytes,
@@ -688,7 +799,9 @@ class SerialOracle:
         expect_ack: bool,
         data_bytes_expected: int,
     ):
-        ic(two_byte_command, result, expect_ack, data_bytes_expected)
+        eprint(
+            f"serialtool: extract_command_result() {two_byte_command=} {result=} {expect_ack=} {data_bytes_expected=}"
+        )
         assert isinstance(two_byte_command, bytes)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
@@ -704,114 +817,6 @@ class SerialOracle:
             result = result[:-2]
         ic(result)
         return result
-
-    def send_serial_command(
-        self,
-        command: bytes,
-        expect_ack: bool,
-        argument: None | bytes = None,
-        data_bytes_expected: int = 0,
-        byte_count_requested=False,
-        bytes_expected=None,
-        timeout: None | float = None,
-        no_read: bool = False,
-        echo: bool = True,
-        simulate: bool = False,
-    ):
-        if simulate or gvd:
-            echo = True
-        ic(command, argument, expect_ack, timeout)
-        assert isinstance(command, bytes)
-
-        if data_bytes_expected:
-            assert not byte_count_requested
-            assert byte_count_requested != inf
-            assert not bytes_expected
-            assert not no_read
-
-        if expect_ack:
-            assert not byte_count_requested
-            assert not bytes_expected
-            assert not no_read
-            assert byte_count_requested != inf
-
-        if byte_count_requested:
-            assert not no_read
-
-        if no_read:
-            assert not byte_count_requested
-            assert byte_count_requested != inf
-        elif byte_count_requested == inf:
-            assert not no_read
-
-        _command = construct_serial_command(command=command, argument=argument)
-
-        if echo:
-            _argument_repr = repr(argument)[0:10]
-            eprint(
-                "serialtool: send_serial_command()",
-                f"{timeout=}",
-                f"{expect_ack=}",
-                f"{len(command)=}",
-                f"argument={_argument_repr}",
-                _command,
-                f"{byte_count_requested=}",
-                _command.hex(),
-            )
-
-        ic(
-            _command,
-            len(_command),
-            expect_ack,
-            argument,
-            byte_count_requested,
-            bytes_expected,
-            data_bytes_expected,
-            timeout,
-            no_read,
-        )
-
-        if simulate:
-            return b""
-
-        self.reset_rx()
-        self.write(_command)
-
-        if data_bytes_expected:
-            assert not byte_count_requested
-            # b"\x10\x02" + data_bytes_expected + b"\x10\x03"
-            byte_count_requested = 2 + data_bytes_expected + 2
-
-        if expect_ack:
-            byte_count_requested = byte_count_requested + 3
-
-        # icp(byte_count_requested)
-        if not no_read:
-            if expect_ack:
-                if not timeout:
-                    timeout = 1
-            try:
-                rx_bytes = self.read_command_result(
-                    byte_count_requested=byte_count_requested,
-                    bytes_expected=bytes_expected,
-                    timeout=timeout,
-                )
-            except ValueError as e:
-                ic(e)
-                raise e
-
-            rx_bytes = self.extract_command_result(
-                two_byte_command=command,
-                result=rx_bytes,
-                expect_ack=expect_ack,
-                data_bytes_expected=data_bytes_expected,
-            )
-
-            if echo:
-                eprint(
-                    f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
-                )
-            return rx_bytes
 
 
 @click.command()
