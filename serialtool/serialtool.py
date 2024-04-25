@@ -633,9 +633,9 @@ class SerialOracle:
         if byte_count_requested:
             assert not expected_response
 
-        _byte_count_requested = 0
-        if expected_response:
-            _byte_count_requested = len(expected_response)
+        # _byte_count_requested = 0
+        # if expected_response:
+        #    _byte_count_requested = len(expected_response)
 
         if echo:
             eprint(
@@ -644,11 +644,11 @@ class SerialOracle:
                 f"{len(command)=}",
                 f"{command.hex()=}",
                 f"{timeout=}",
-                f"{_byte_count_requested=}",
+                f"{byte_count_requested=}",
                 end="",
             )
             if expected_response:
-                eprint(f"{expected_response=}", end="")
+                eprint(f" {expected_response=}", end="")  # deliberate sp
             eprint()
 
         ic(
@@ -664,7 +664,7 @@ class SerialOracle:
 
         try:
             rx_bytes = self.read_command_result(
-                byte_count_requested=_byte_count_requested,
+                byte_count_requested=byte_count_requested,
                 bytes_expected=expected_response,
                 timeout=timeout,
             )
@@ -711,6 +711,8 @@ class SerialOracle:
         # better to force non-specificaion of the count in the calling code
         # if bytes_expected and byte_count_requested:
         #    assert len(bytes_expected) == byte_count_requested
+
+        # dont both specify the expected response bytes AND the count of thouse same bytes
         if bytes_expected:
             assert byte_count_requested is None
             byte_count_requested = len(bytes_expected)
