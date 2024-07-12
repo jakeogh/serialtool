@@ -53,7 +53,6 @@ from timestamptool import get_timestamp
 
 # import subprocess
 # import atexit
-# from io import BufferedReader
 
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
@@ -741,7 +740,7 @@ class SerialOracle:
                 all_bytes += read_bytes
                 if (time.time() - start_time) > timeout:
                     ic("TIMEOUT", timeout)
-                    break
+                    raise TimeoutError(timeout)
             ic(len(all_bytes))
             return all_bytes
 
@@ -761,7 +760,8 @@ class SerialOracle:
 
             if (time.time() - start_time) > timeout:
                 ic("TIMEOUT", timeout)
-                break
+                raise TimeoutError(timeout)
+                # break
         if progress:
             eprint(f"\ndone: {byte_count_requested}/{len(result)}")
         _duration = time.time() - start_time
