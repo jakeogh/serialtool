@@ -791,8 +791,10 @@ class SerialOracle:
                     IPython.embed()
                 ic("About to raise ValueError on result:", result)
                 raise ValueError(result)
-
-        ic(result)
+        if len(result) < 10:
+            ic(result[0:10])
+        elif gvd:
+            ic(result)
         return result
 
     def extract_command_result(
