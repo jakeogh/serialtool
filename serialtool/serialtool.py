@@ -748,7 +748,7 @@ class SerialOracle:
         if progress:
             eprint(f"\ndone: {byte_count_requested}/{len(result)}")
         _duration = time.time() - start_time
-        if _duration > 1:
+        if _duration > 0.25:
             _bytes_per_second = int(len(result) / _duration)
             _bits_per_second = _bytes_per_second * 8
             eprint(f"{_duration=}, {_bytes_per_second=}, {_bits_per_second=}")
