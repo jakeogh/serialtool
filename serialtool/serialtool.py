@@ -77,9 +77,6 @@ def generate_serial_port_help():
     ports = list_ports.comports()
     _ports = [str(port) for port in ports]
     help_text = repr(tuple(_ports))
-    # for port in ports:
-    #    help_text += "\b\n" + str(port)
-
     help_text.replace("\n\n", "\n")
     return help_text
 
@@ -796,9 +793,19 @@ class SerialOracle:
         assert isinstance(two_byte_command, bytes)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
-            eprint(
-                f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
-            )
+            if len(result) < 100:
+                eprint(
+                    f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
+                )
+            else:
+                if gvd:
+                    eprint(
+                        f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
+                    )
+                else:
+                    eprint(
+                        f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} (truncated){result[-len(ending_bytes_expected) :100]=} {ending_bytes_expected=}"
+                    )
             assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
             result = result[:-3]
 
