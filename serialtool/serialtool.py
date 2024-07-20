@@ -84,19 +84,6 @@ def generate_serial_port_help():
     return help_text
 
 
-# def lookup_two_byte_command_name(two_bytes: bytes):
-#    assert isinstance(two_bytes, bytes)
-#    two_bytes_str = two_bytes.split(b"0x")[-1].decode("utf8")
-#    for key, value in COMMAND_DICT.items():
-#        # value = COMMAND_DICT[key]
-#        value_hex_str = value.split("0x")[-1]
-#        value_bytes = bytearray.fromhex(value_hex_str)
-#        value_bytes_str = value_bytes.decode("utf8")
-#        if two_bytes_str == value_bytes_str:
-#            return key
-#    raise ValueError(two_bytes)
-
-
 def wait_for_serial_queue(
     *,
     serial_queue,
@@ -508,7 +495,7 @@ class SerialOracle:
         expect_ack: bool,
         argument: None | bytes = None,
         data_bytes_expected: int = 0,
-        byte_count_requested=False,
+        byte_count_requested: bool | int = False,  # a spectific number of bytes
         bytes_expected=None,
         timeout: None | float = None,
         no_read: bool = False,
@@ -761,7 +748,6 @@ class SerialOracle:
             if (time.time() - start_time) > timeout:
                 ic("TIMEOUT", timeout)
                 raise TimeoutError(timeout)
-                # break
         if progress:
             eprint(f"\ndone: {byte_count_requested}/{len(result)}")
         _duration = time.time() - start_time
