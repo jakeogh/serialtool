@@ -802,6 +802,7 @@ class SerialOracle:
             f"serialtool: extract_command_result() {two_byte_command=} {result=} {expect_ack=} {data_bytes_expected=}"
         )
         assert isinstance(two_byte_command, bytes)
+        icp(gvd)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
             if len(result) < 100:
@@ -827,7 +828,7 @@ class SerialOracle:
             result = result[2:]
             assert result[-2:] == b"\x10\x03"
             result = result[:-2]
-        ic(result)
+        # ic(result)
         return result
 
 
