@@ -466,7 +466,7 @@ class SerialOracle:
             if progress:
                 _len = len(self.rx_buffer)
                 eprint(
-                    f"{count}/{_len} {_len-count}     {int(_len/count*100)}%       ",
+                    f"{_len}/{count} {_len-count}     {int(_len/count*100)}%       ",
                     end="\r",
                 )
 
@@ -756,7 +756,7 @@ class SerialOracle:
                 ic("TIMEOUT", timeout)
                 raise TimeoutError(timeout)
         if progress:
-            eprint(f"\ndone: {byte_count_requested}/{len(result)}")
+            eprint(f"\ndone: {len(result)}/{byte_count_requested}")
         _duration = time.time() - start_time
         if _duration > 0.25:
             _bytes_per_second = int(len(result) / _duration)
