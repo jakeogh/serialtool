@@ -54,6 +54,7 @@ from timestamptool import get_timestamp
 # import subprocess
 # import atexit
 
+gvd.disable()
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
@@ -593,9 +594,19 @@ class SerialOracle:
             )
 
             if echo:
-                eprint(
-                    f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
-                )
+                if len(rx_bytes) > 100:
+                    if gvd:
+                        eprint(
+                            f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                        )
+                    else:
+                        eprint(
+                            f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
+                        )
+                else:
+                    eprint(
+                        f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                    )
             return rx_bytes
 
     def send_serial_command_direct(
