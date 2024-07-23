@@ -469,7 +469,6 @@ class SerialOracle:
                     f"{count}/{_len} {_len-count}     {int(_len/count*100)}%       ",
                     end="\r",
                 )
-        # icp("exiting while")
 
         if count != inf:
             result = self.rx_buffer[
@@ -798,9 +797,15 @@ class SerialOracle:
         expect_ack: bool,
         data_bytes_expected: int,
     ):
-        eprint(
-            f"serialtool: extract_command_result() {two_byte_command=} {result=} {expect_ack=} {data_bytes_expected=}"
-        )
+        if len(result) > 100:
+            if gvd:
+                eprint(
+                    f"serialtool: extract_command_result() {two_byte_command=} {result=} {expect_ack=} {data_bytes_expected=}"
+                )
+            else:
+                eprint(
+                    f"serialtool: extract_command_result() {two_byte_command=} (truncated){result[:100]=} {expect_ack=} {data_bytes_expected=}"
+                )
         assert isinstance(two_byte_command, bytes)
         icp(gvd)
         if expect_ack:
