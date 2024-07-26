@@ -498,6 +498,7 @@ class SerialOracle:
         no_read: bool = False,
         echo: bool = True,
         simulate: bool = False,
+        progress: bool = False,
     ):
         if simulate or gvd:
             echo = True
@@ -580,6 +581,7 @@ class SerialOracle:
                     byte_count_requested=byte_count_requested,
                     bytes_expected=bytes_expected,
                     timeout=timeout,
+                    progress=progress,
                 )
             except ValueError as e:
                 ic(e)
@@ -615,6 +617,7 @@ class SerialOracle:
         expected_response: None | bytes = None,
         timeout: None | float = None,
         echo: bool = True,
+        progress: bool = False,
     ):
         ic(command, expected_response, timeout)
         assert isinstance(command, bytes)
@@ -660,6 +663,7 @@ class SerialOracle:
                 byte_count_requested=byte_count_requested,
                 bytes_expected=expected_response,
                 timeout=timeout,
+                progress=progress,
             )
         except ValueError as e:
             ic(e)
