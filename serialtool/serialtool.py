@@ -38,14 +38,14 @@ from asserttool import icp
 from clicktool import click_add_options
 from clicktool import click_global_options
 from clicktool import tvicgvd
-from cycloidal_client.ctia_construct_serial_command_and_response import \
-    construct_serial_command
-from cycloidal_client.exceptions import SerialNoResponseError
 from eprint import eprint
 from globalverbose import gvd
 from serial.tools import list_ports
 from timestamptool import get_int_timestamp
 from timestamptool import get_timestamp
+
+from cycloidal_client.ctia_construct_serial_command_and_response import \
+    construct_serial_command
 
 # from contextlib import ExitStack
 # from shutil import get_terminal_size
@@ -58,6 +58,10 @@ gvd.disable()
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
+
+
+class SerialNoResponseError(ValueError):
+    pass
 
 
 # def construct_serial_command(
@@ -811,7 +815,6 @@ class SerialOracle:
                     f"serialtool: extract_command_result() {two_byte_command=} (truncated){result[:100]=} {expect_ack=} {data_bytes_expected=}"
                 )
         assert isinstance(two_byte_command, bytes)
-        icp(gvd)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
             if len(result) < 100:
