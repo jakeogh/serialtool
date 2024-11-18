@@ -76,6 +76,14 @@ def construct_serial_command(
     return command
 
 
+def construct_serial_command_ack(
+    command: bytes,
+):
+    ic(command)
+    response = b"\x06" + command
+    return response
+
+
 # def construct_serial_command(
 #    command: bytes,
 #    argument: None | bytes = None,
