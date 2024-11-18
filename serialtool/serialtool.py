@@ -38,14 +38,12 @@ from asserttool import icp
 from clicktool import click_add_options
 from clicktool import click_global_options
 from clicktool import tvicgvd
+from cycloidal_client import construct_serial_command
 from eprint import eprint
 from globalverbose import gvd
 from serial.tools import list_ports
 from timestamptool import get_int_timestamp
 from timestamptool import get_timestamp
-
-from cycloidal_client.ctia_construct_serial_command_and_response import \
-    construct_serial_command
 
 # from contextlib import ExitStack
 # from shutil import get_terminal_size
