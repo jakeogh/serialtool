@@ -38,7 +38,6 @@ from asserttool import icp
 from clicktool import click_add_options
 from clicktool import click_global_options
 from clicktool import tvicgvd
-from cycloidal_client import construct_serial_command
 from eprint import eprint
 from globalverbose import gvd
 from serial.tools import list_ports
@@ -60,6 +59,20 @@ DATA_DIR.mkdir(exist_ok=True)
 
 class SerialNoResponseError(ValueError):
     pass
+
+
+def construct_serial_command(
+    command: bytes,
+    argument: None | bytes = None,
+):
+    # if ic.enabled:
+    #    command_name = lookup_two_byte_command_name(two_bytes=command)
+    #    ic(command, command_name)
+    if argument:
+        command = command + argument
+
+    command = b"\x10\x02" + command + b"\x10\x03"
+    return command
 
 
 # def construct_serial_command(
