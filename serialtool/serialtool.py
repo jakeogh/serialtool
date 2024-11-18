@@ -68,6 +68,7 @@ def construct_serial_command(
     # if ic.enabled:
     #    command_name = lookup_two_byte_command_name(two_bytes=command)
     #    ic(command, command_name)
+    #
     if argument:
         command = command + argument
 
