@@ -51,7 +51,7 @@ from timestamptool import get_timestamp
 # import subprocess
 # import atexit
 
-gvd.disable()
+# gvd.disable()
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
 DATA_DIR.mkdir(exist_ok=True)
@@ -79,22 +79,10 @@ def construct_serial_command(
 def construct_serial_command_ack(
     command: bytes,
 ):
-    ic(command)
+    if gvd:
+        ic(command)
     response = b"\x06" + command
     return response
-
-
-# def construct_serial_command(
-#    command: bytes,
-#    argument: None | bytes = None,
-# ):
-#    command_name = lookup_two_byte_command_name(two_bytes=command)
-#    ic(command, command_name)
-#    if argument:
-#        command = command + argument
-#
-#    command = b"\x10\x02" + command + b"\x10\x03"
-#    return command
 
 
 def generate_serial_port_help():
@@ -168,6 +156,7 @@ class SerialQueue:
     log_serial_data: bool
     ready_signal: str
     serial_port: str
+    terse: bool
     baud_rate: int = 460800
     default_timeout: float = 1.0
     hardware_buffer_size: int = 4096
@@ -292,6 +281,7 @@ def launch_serial_queue_process(
     serial_data_dir: Path,
     baud_rate: int,
     log_serial_data: bool,
+    terse: bool,
 ):
     ready_signal = str(time.time())
     serial_queue = SerialQueue(
@@ -302,6 +292,7 @@ def launch_serial_queue_process(
         serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
         ready_signal=ready_signal,
+        terse=terse,
     )
     serial_queue_process = Process(target=serial_queue.listen_serial, args=())
     serial_queue_process.start()
@@ -376,12 +367,13 @@ def print_serial_output(
     log_serial_data: bool,
     timestamp: bool,
     read_tx_from_fifo: bool,
+    terse: bool,
     baud_rate: int = 460800,
     show_bytes: bool = False,
 ):
     rx_queue = Queue()
     tx_queue = Queue()
-    tx_tosend_queue = []
+
     last_queue_size = None
     queue_size = 0
     fifo_handle: int | None = None
@@ -394,6 +386,7 @@ def print_serial_output(
         baud_rate=baud_rate,
         serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
+        terse=terse,
     )
     while True:
         if gvd:
@@ -435,6 +428,7 @@ class SerialOracle:
     log_serial_data: bool
     serial_port: str
     ipython_on_communication_error: bool
+    terse: bool
 
     def __attrs_post_init__(self):
         self.rx_queue = Queue()
@@ -448,6 +442,7 @@ class SerialOracle:
             log_serial_data=self.log_serial_data,
             baud_rate=self.baud_rate,
             serial_data_dir=self.serial_data_dir,
+            terse=self.terse,
         )
 
     def terminate(self):
@@ -554,19 +549,22 @@ class SerialOracle:
 
         if echo:
             _argument_repr = repr(argument)[0:10]
-            eprint(
-                "serialtool: send_serial_command()",
-                f"{len(command)=}",
-                f"{_command=}",
-                f"{expect_ack=}",
-                f"argument={_argument_repr}",
-                f"{data_bytes_expected=}",
-                f"{byte_count_requested=}",
-                f"{bytes_expected=}",
-                f"{timeout=}",
-                f"{no_read=}",
-                f"{_command.hex()=}",
-            )
+            if self.terse:
+                eprint(_command.hex())
+            else:
+                eprint(
+                    "serialtool: send_serial_command()",
+                    f"{len(command)=}",
+                    f"{_command=}",
+                    f"{expect_ack=}",
+                    f"argument={_argument_repr}",
+                    f"{data_bytes_expected=}",
+                    f"{byte_count_requested=}",
+                    f"{bytes_expected=}",
+                    f"{timeout=}",
+                    f"{no_read=}",
+                    f"{_command.hex()=}",
+                )
 
         ic(
             _command,
@@ -625,13 +623,19 @@ class SerialOracle:
                             f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
                         )
                     else:
-                        eprint(
-                            f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
-                        )
+                        if self.terse:
+                            eprint(f"{repr(rx_bytes[:100])=}")
+                        else:
+                            eprint(
+                                f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
+                            )
                 else:
-                    eprint(
-                        f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
-                    )
+                    if self.terse:
+                        eprint(f"{repr(rx_bytes)=}")
+                    else:
+                        eprint(
+                            f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                        )
             return rx_bytes
 
     def send_serial_command_direct(
@@ -658,15 +662,18 @@ class SerialOracle:
         #    _byte_count_requested = len(expected_response)
 
         if echo:
-            eprint(
-                "serialtool: send_serial_command_direct()",
-                f"{command=}",
-                f"{len(command)=}",
-                f"{command.hex()=}",
-                f"{timeout=}",
-                f"{byte_count_requested=}",
-                end="",
-            )
+            if self.terse:
+                eprint(f"{command=}")
+            else:
+                eprint(
+                    "serialtool: send_serial_command_direct()",
+                    f"{command=}",
+                    f"{len(command)=}",
+                    f"{command.hex()=}",
+                    f"{timeout=}",
+                    f"{byte_count_requested=}",
+                    end="",
+                )
             if expected_response:
                 eprint(f" {expected_response=}", end="")  # deliberate sp
             eprint()
@@ -699,9 +706,12 @@ class SerialOracle:
                 ic(expected_response)
                 raise ValueError(rx_bytes)
         if echo:
-            eprint(
-                f"serialtool: send_serial_command_direct() {len(rx_bytes)=} {repr(rx_bytes)=}"
-            )
+            if self.terse:
+                eprint(f"{repr(rx_bytes)=}")
+            else:
+                eprint(
+                    f"serialtool: send_serial_command_direct() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                )
         return rx_bytes
 
     def read_command_result(
@@ -725,9 +735,10 @@ class SerialOracle:
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
-        eprint(
-            f"serialtool: read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
-        )
+        if not self.terse:
+            eprint(
+                f"serialtool: read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
+            )
 
         # better to force non-specificaion of the count in the calling code
         # if bytes_expected and byte_count_requested:
@@ -784,12 +795,12 @@ class SerialOracle:
                 ic("TIMEOUT", timeout)
                 raise TimeoutError(timeout)
         if progress:
-            eprint(f"\ndone: {len(result)}/{byte_count_requested}")
+            eprint(f"\ndone: {len(result)}/{byte_count_requested}\n")
         _duration = time.time() - start_time
         if _duration > 0.25:
             _bytes_per_second = int(len(result) / _duration)
             _bits_per_second = _bytes_per_second * 8
-            eprint(f"{_duration=}, {_bytes_per_second=}, {_bits_per_second=}")
+            eprint(f"\n{_duration=}, {_bytes_per_second=}, {_bits_per_second=}\n")
 
         if gvd:
             ic(repr(result))  # all data
@@ -837,19 +848,20 @@ class SerialOracle:
         assert isinstance(two_byte_command, bytes)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
-            if len(result) < 100:
-                eprint(
-                    f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
-                )
-            else:
-                if gvd:
+            if not self.terse:
+                if len(result) < 100:
                     eprint(
                         f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
                     )
                 else:
-                    eprint(
-                        f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} (truncated){result[-len(ending_bytes_expected) :100]=} {ending_bytes_expected=}"
-                    )
+                    if gvd:
+                        eprint(
+                            f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} {result[-len(ending_bytes_expected) :]=} {ending_bytes_expected=}"
+                        )
+                    else:
+                        eprint(
+                            f"serialtool: extract_command_result() {expect_ack=} {-len(ending_bytes_expected)=} (truncated){result[-len(ending_bytes_expected) :100]=} {ending_bytes_expected=}"
+                        )
             assert result[-len(ending_bytes_expected) :] == ending_bytes_expected
             result = result[:-3]
 
@@ -882,6 +894,7 @@ class SerialOracle:
 @click.option("--timestamp", is_flag=True)
 @click.option("--read-from-fifo", is_flag=True)
 @click.option("--log-serial-data", is_flag=True)
+@click.option("--terse", is_flag=True)
 @click_add_options(click_global_options)
 @click.pass_context
 def cli(
@@ -892,6 +905,7 @@ def cli(
     log_serial_data: bool,
     baud_rate: int,
     read_from_fifo: bool,
+    terse: bool,
     timestamp: bool,
     verbose_inf: bool,
     dict_output: bool,
@@ -916,4 +930,5 @@ def cli(
         show_bytes=show_bytes,
         baud_rate=baud_rate,
         read_tx_from_fifo=read_from_fifo,
+        terse=terse,
     )
