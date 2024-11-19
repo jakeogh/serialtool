@@ -844,7 +844,7 @@ class SerialOracle:
                 )
             else:
                 if self.terse:
-                    eprint(f"{len(result)}")
+                    eprint(f"{len(result)=}")
                 else:
                     eprint(
                         f"serialtool: extract_command_result() {two_byte_command=} (truncated){result[:100]=} {expect_ack=} {data_bytes_expected=}"
