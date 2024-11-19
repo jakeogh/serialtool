@@ -550,7 +550,7 @@ class SerialOracle:
         if echo:
             _argument_repr = repr(argument)[0:10]
             if self.terse:
-                eprint(_command.hex())
+                eprint(_command)
             else:
                 eprint(
                     "serialtool: send_serial_command()",
@@ -616,26 +616,27 @@ class SerialOracle:
                 data_bytes_expected=data_bytes_expected,
             )
 
-            if echo:
-                if len(rx_bytes) > 100:
-                    if gvd:
-                        eprint(
-                            f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
-                        )
+            if len(rx_bytes) > 0:
+                if echo:
+                    if len(rx_bytes) > 100:
+                        if gvd:
+                            eprint(
+                                f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                            )
+                        else:
+                            if self.terse:
+                                eprint(f"{repr(rx_bytes[:100])=}")
+                            else:
+                                eprint(
+                                    f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
+                                )
                     else:
                         if self.terse:
-                            eprint(f"{repr(rx_bytes[:100])=}")
+                            eprint(f"{repr(rx_bytes)=}")
                         else:
                             eprint(
-                                f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
+                                f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
                             )
-                else:
-                    if self.terse:
-                        eprint(f"{repr(rx_bytes)=}")
-                    else:
-                        eprint(
-                            f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
-                        )
             return rx_bytes
 
     def send_serial_command_direct(
