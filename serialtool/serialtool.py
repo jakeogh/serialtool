@@ -801,7 +801,7 @@ class SerialOracle:
         if _duration > 0.25:
             _bytes_per_second = int(len(result) / _duration)
             _bits_per_second = _bytes_per_second * 8
-            eprint(f"\n{_duration=}, {_bytes_per_second=}, {_bits_per_second=}\n")
+            eprint(f"\n{_duration=}, {_bytes_per_second=}, {_bits_per_second=}")
 
         if gvd:
             ic(repr(result))  # all data
@@ -843,9 +843,12 @@ class SerialOracle:
                     f"serialtool: extract_command_result() {two_byte_command=} {result=} {expect_ack=} {data_bytes_expected=}"
                 )
             else:
-                eprint(
-                    f"serialtool: extract_command_result() {two_byte_command=} (truncated){result[:100]=} {expect_ack=} {data_bytes_expected=}"
-                )
+                if self.terse:
+                    eprint(f"{len(result)}")
+                else:
+                    eprint(
+                        f"serialtool: extract_command_result() {two_byte_command=} (truncated){result[:100]=} {expect_ack=} {data_bytes_expected=}"
+                    )
         assert isinstance(two_byte_command, bytes)
         if expect_ack:
             ending_bytes_expected = b"\x06" + two_byte_command
