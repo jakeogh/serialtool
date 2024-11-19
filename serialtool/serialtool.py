@@ -190,7 +190,7 @@ class SerialQueue:
         if self.log_serial_data:
             icp(self.serial_data_dir)
         serial_url = "".join(serial_url_list)
-        icp(serial_url)
+        eprint(f"{serial_url=}")
         self.ser = serial.serial_for_url(serial_url)
         self.ser.baudrate = self.baud_rate
         self.ser.timeout = self.default_timeout
