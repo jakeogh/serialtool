@@ -625,14 +625,14 @@ class SerialOracle:
                             )
                         else:
                             if self.terse:
-                                eprint(f"{repr(rx_bytes[:100])=}")
+                                eprint(f"{len(rx_bytes)=}")
                             else:
                                 eprint(
                                     f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
                                 )
                     else:
                         if self.terse:
-                            eprint(f"{repr(rx_bytes)=}")
+                            eprint(f"{rx_bytes=}")
                         else:
                             eprint(
                                 f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
