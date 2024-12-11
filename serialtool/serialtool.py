@@ -752,7 +752,7 @@ class SerialOracle:
 
         if not timeout:
             timeout = inf
-            ic(timeout)
+            # ic(timeout)
 
         if byte_count_requested == 0:
             assert bytes_expected is None
