@@ -148,6 +148,75 @@ def pick_serial_port():
 
 
 @attr.s(auto_attribs=True)
+class SerialMinimal:
+    serial_data_dir: Path
+    log_serial_data: bool
+    ready_signal: str
+    serial_port: str
+    terse: bool
+    baud_rate: int
+    default_timeout: float = 1.0
+    hardware_buffer_size: int = 4096
+
+    def __attrs_post_init__(self):
+        ic(self.serial_port)
+        serial_data_dir = self.serial_data_dir / Path("serial_logs")
+        serial_data_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = get_int_timestamp()
+        serial_data_file = serial_data_dir / Path(
+            timestamp + "_" + self.serial_port.split("/")[-1]
+        )
+
+        # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.serial_for_url
+        # https://pyserial.readthedocs.io/en/latest/url_handlers.html#urls
+        serial_url_list = ["spy://", self.serial_port]
+
+        serial_url_list.append("?file=")
+        if self.log_serial_data:
+            serial_url_list.append(serial_data_file.as_posix())
+        else:
+            if sys.platform == "linux":
+                serial_url_list.append("/dev/null")
+            else:
+                serial_url_list.append("NUL:")
+
+        if self.log_serial_data:
+            icp(self.serial_data_dir)
+        serial_url = "".join(serial_url_list)
+        eprint(f"{serial_url=}")
+        self.ser = serial.serial_for_url(serial_url)
+        self.ser.baudrate = self.baud_rate
+        self.ser.timeout = self.default_timeout
+        self.ser.ctsrts = False
+        self.ser.dsrdtr = False
+        self.ser.xonxoff = False
+        ic(
+            self.ser.port,
+            self.ser.baudrate,
+            self.ser.bytesize,
+            self.ser.parity,
+            self.ser.stopbits,
+            self.ser.timeout,
+            self.ser.xonxoff,
+            self.ser.rtscts,
+            self.ser.dsrdtr,
+            self.ser.write_timeout,
+            self.ser.inter_byte_timeout,
+            self.ser.exclusive,
+            self.ser,
+        )
+        # ic(self.ser.read_until)
+        # ic(self.ser.nonblocking)
+        if gvd:
+            ic(dir(self.ser))
+        discard = self.ser.readall()  # self.ser.readlines() is incorrect
+        if gvd:
+            ic(discard)
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+
+
+@attr.s(auto_attribs=True)
 class SerialQueue:
     # https://pyserial.readthedocs.io/en/latest/pyserial_api.html
     rx_queue: Queue
