@@ -53,7 +53,7 @@ from timestamptool import get_timestamp
 
 # gvd.disable()
 
-DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".cycloidal_client"))
+DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".serialtool"))
 DATA_DIR.mkdir(exist_ok=True)
 
 
@@ -149,12 +149,12 @@ def pick_serial_port():
 
 @attr.s(auto_attribs=True)
 class SerialMinimal:
-    data_dir: Path
     log_serial_data: bool
     serial_port: str
     baud_rate: int
     default_timeout: float = 1.0
     hardware_buffer_size: int = 4096
+    data_dir: Path = DATA_DIR
 
     def __attrs_post_init__(self):
         ic(self.serial_port)
