@@ -149,7 +149,7 @@ def pick_serial_port():
 
 @attr.s(auto_attribs=True)
 class SerialMinimal:
-    serial_data_dir: Path
+    data_dir: Path
     log_serial_data: bool
     serial_port: str
     baud_rate: int
@@ -158,7 +158,7 @@ class SerialMinimal:
 
     def __attrs_post_init__(self):
         ic(self.serial_port)
-        serial_data_dir = self.serial_data_dir / Path("serial_logs")
+        serial_data_dir = self.data_dir / Path("serial_logs")
         serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
         serial_data_file = serial_data_dir / Path(
