@@ -151,9 +151,7 @@ def pick_serial_port():
 class SerialMinimal:
     serial_data_dir: Path
     log_serial_data: bool
-    ready_signal: str
     serial_port: str
-    terse: bool
     baud_rate: int
     default_timeout: float = 1.0
     hardware_buffer_size: int = 4096
