@@ -109,7 +109,7 @@ def wait_for_serial_queue(
             raise TimeoutError("nothing arrived in the serial_queue in time")
 
 
-def pick_serial_port():
+def pick_serial_port() -> Path:
     ftdi_devices = ["US232R", "USB-Serial Controller"]
     ports = list_ports.comports()
     # ic(ports)
@@ -118,13 +118,13 @@ def pick_serial_port():
         ic(port_str)
         for device in ftdi_devices:
             if port_str.endswith(device):
-                return port_str.split(" ")[0]
+                return Path(port_str.split(" ")[0])
 
     # attempt to pick one with a device attached
     for port in ports:
         port_str = str(port)
         if not port_str.endswith("n/a"):
-            return port_str.split(" ")[0]
+            return Path(port_str.split(" ")[0])
     print("")
     print("------------------------!!!!LIKELY ERROR!!!!---------------------")
     print("------------------------!!!!LIKELY ERROR!!!!---------------------")
@@ -144,7 +144,7 @@ def pick_serial_port():
     except IndexError:
         ic("No serial ports were found. Exiting.")
         sys.exit(1)
-    return port
+    return Path(port)
 
 
 @attr.s(auto_attribs=True)
@@ -222,7 +222,7 @@ class SerialQueue:
     serial_data_dir: Path
     log_serial_data: bool
     ready_signal: str
-    serial_port: str
+    serial_port: Path
     terse: bool
     baud_rate: int = 460800
     default_timeout: float = 1.0
@@ -238,7 +238,7 @@ class SerialQueue:
         serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
         serial_data_file = serial_data_dir / Path(
-            timestamp + "_" + self.serial_port.split("/")[-1]
+            timestamp + "_" + self.serial_port.name
         )
 
         # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.serial_for_url
