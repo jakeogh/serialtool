@@ -344,7 +344,7 @@ def launch_serial_queue_process(
     *,
     rx_queue: Queue,
     tx_queue: Queue,
-    serial_port: str,
+    serial_port: Path,
     serial_data_dir: Path,
     baud_rate: int,
     log_serial_data: bool,
@@ -429,7 +429,7 @@ def read_fifo(io_handle, length: int) -> None | bytes:
 
 def print_serial_output(
     *,
-    serial_port: str | None,
+    serial_port: Path,
     serial_data_dir: Path,
     log_serial_data: bool,
     timestamp: bool,
@@ -493,7 +493,7 @@ class SerialOracle:
     baud_rate: int
     serial_data_dir: Path
     log_serial_data: bool
-    serial_port: str
+    serial_port: Path
     ipython_on_communication_error: bool
     terse: bool
 
@@ -949,7 +949,17 @@ class SerialOracle:
 
 
 @click.command()
-@click.argument("serial_port", type=str, nargs=1)
+@click.argument(
+    "serial_port",
+    type=click.Path(
+        exists=True,
+        dir_okay=False,
+        file_okay=True,
+        path_type=Path,
+        allow_dash=False,
+    ),
+    nargs=1,
+)
 @click.option(
     "--data_dir",
     type=click.Path(
@@ -971,7 +981,7 @@ class SerialOracle:
 @click.pass_context
 def cli(
     ctx,
-    serial_port: str,
+    serial_port: Path,
     data_dir: Path,
     show_bytes: bool,
     log_serial_data: bool,
