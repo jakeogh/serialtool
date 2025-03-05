@@ -243,7 +243,7 @@ class SerialQueue:
 
         # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.serial_for_url
         # https://pyserial.readthedocs.io/en/latest/url_handlers.html#urls
-        serial_url_list = ["spy://", self.serial_port]
+        serial_url_list = ["spy://", self.serial_port.as_posix()]
 
         serial_url_list.append("?file=")
         if self.log_serial_data:
