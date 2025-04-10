@@ -158,10 +158,10 @@ class SerialMinimal:
 
     def __attrs_post_init__(self):
         ic(self.serial_port)
-        serial_data_dir = self.data_dir / Path("serial_logs")
-        serial_data_dir.mkdir(parents=True, exist_ok=True)
+        self.serial_data_dir = self.data_dir / Path("serial_logs")
+        self.serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
-        serial_data_file = serial_data_dir / Path(
+        serial_data_file = self.serial_data_dir / Path(
             timestamp + "_" + self.serial_port.split("/")[-1]
         )
 
