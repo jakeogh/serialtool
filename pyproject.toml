@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "serialtool"
-version = "0.0.1760905718"
+version = "0.0.1760909895"
 description = "Common functions for serial communication"
 authors = [
     { name = "Justin Keogh", email = "github.com@v6y.net" },
@@ -21,10 +21,8 @@ dependencies = [
     "eprint @ git+https://github.com/jakeogh/eprint",
     "globalverbose @ git+https://github.com/jakeogh/globalverbose",
 ]
+license = "ISC"
 requires-python = ">=3.11"
-
-[project.license]
-text = "ISC"
 
 [project.urls]
 Homepage = "https://github.com/jakeogh/serialtool"
