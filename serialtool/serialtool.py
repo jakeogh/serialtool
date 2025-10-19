@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-# pylint: disable=useless-suppression             # [I0021]
-# pylint: disable=missing-docstring               # [C0111] docstrings are always outdated and wrong
-# pylint: disable=fixme                           # [W0511] todo is encouraged
-# pylint: disable=line-too-long                   # [C0301]
-# pylint: disable=too-many-instance-attributes    # [R0902]
-# pylint: disable=too-many-lines                  # [C0302] too many lines in module
-# pylint: disable=invalid-name                    # [C0103] single letter var names, name too descriptive
-# pylint: disable=too-many-return-statements      # [R0911]
-# pylint: disable=too-many-branches               # [R0912]
-# pylint: disable=too-many-statements             # [R0915]
-# pylint: disable=too-many-arguments              # [R0913]
-# pylint: disable=too-many-nested-blocks          # [R1702]
-# pylint: disable=too-many-locals                 # [R0914]
-# pylint: disable=too-few-public-methods          # [R0903]
-# pylint: disable=no-member                       # [E1101] no member for base
-# pylint: disable=attribute-defined-outside-init  # [W0201]
 
 from __future__ import annotations
 
@@ -43,15 +27,6 @@ from globalverbose import gvd
 from serial.tools import list_ports
 from timestamptool import get_int_timestamp
 from timestamptool import get_timestamp
-
-# from contextlib import ExitStack
-# from shutil import get_terminal_size
-# from multiprocessing import get_context
-
-# import subprocess
-# import atexit
-
-# gvd.disable()
 
 DATA_DIR = Path(Path(os.path.expanduser("~")) / Path(".serialtool"))
 DATA_DIR.mkdir(exist_ok=True)
@@ -536,7 +511,12 @@ class SerialOracle:
             pass
 
     # accepts a float but only inf
-    def _read(self, *, count: int | float, progress: bool = False):
+    def _read(
+        self,
+        *,
+        count: int | float,
+        progress: bool = False,
+    ):
         if isinstance(count, float):
             assert count == inf
         while self.rx_buffer_bytes_available() < count:
@@ -588,7 +568,12 @@ class SerialOracle:
     ):
         if simulate or gvd:
             echo = True
-        ic(command, argument, expect_ack, timeout)
+        ic(
+            command,
+            argument,
+            expect_ack,
+            timeout,
+        )
         assert isinstance(command, bytes)
 
         if data_bytes_expected:
