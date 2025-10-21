@@ -397,7 +397,8 @@ def read_fifo(io_handle, length: int) -> None | bytes:
         pass
     else:
         if gvd:
-            eprint(f"read_fifo() {len(buffer)=} {buffer=}")
+            if buffer:
+                eprint(f"read_fifo() {len(buffer)=} {buffer=}")
 
     return buffer
 

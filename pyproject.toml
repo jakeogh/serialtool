@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "serialtool"
-version = "0.0.1760909895"
+version = "0.0.1761035114"
 description = "Common functions for serial communication"
 authors = [
     { name = "Justin Keogh", email = "github.com@v6y.net" },
