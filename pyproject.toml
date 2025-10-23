@@ -5,11 +5,12 @@ backend-path = ["."]
 
 [project]
 name = "serialtool"
-version = "0.0.1761214105"
+version = "1!0.0.1761215704"
 description = "Common functions for serial communication"
 authors = [
     { name = "Justin Keogh", email = "github.com@v6y.net" },
 ]
+
 dependencies = []
 license = "ISC"
 requires-python = ">=3.11"
@@ -38,10 +39,10 @@ serialtool = [
 dependencies-indexed = ["ipython", "asserttool>=0.0.1761033057", "attr", "serial", "clicktool>=0.0.1761033403", "timestamptool>=0.0.1761032277", "eprint>=0.0.1761027667", "globalverbose>=0.0.1761031290"]
 dependencies-git = [
 	"ipython",
-	"asserttool @ git+https://github.com/jakeogh/asserttool", 
+	"asserttool @ git+https://github.com/jakeogh/asserttool",
 	"attr",
 	"serial",
-	"clicktool @ git+https://github.com/jakeogh/clicktool", 
+	"clicktool @ git+https://github.com/jakeogh/clicktool",
 	"timestamptool @ git+https://github.com/jakeogh/timestamptool", 
 	"eprint @ git+https://github.com/jakeogh/eprint", 
 	"globalverbose @ git+https://github.com/jakeogh/globalverbose"]
