@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-PEP 508 URL + Version Workaround Backend
+PEP 508 URL + Version Workaround Backend with Git Submodule Support
 
 This build backend works around PEP 508's limitation that you cannot specify
 both a version constraint AND a git URL for the same dependency.
@@ -9,6 +9,7 @@ both a version constraint AND a git URL for the same dependency.
 It provides automatic fallback:
 - If custom index is configured: Use version constraints (fast, no git clones)
 - If custom index NOT configured: Use git URLs (slow, but still works)
+- If git submodules present: Check versions and only install if needed
 
 Usage in pyproject.toml:
     [build-system]
@@ -22,15 +23,16 @@ Usage in pyproject.toml:
     dependencies = []  # Leave empty, we populate dynamically
 
     [tool.pep508-url-version-backend]
-    # Fast path - used when custom index is available
     dependencies-indexed = [
         "somepackage>=0.0.1234567",
     ]
-    # Slow fallback - used when index not configured
     dependencies-git = [
         "somepackage @ git+https://github.com/user/somepackage",
     ]
-    # Custom index URL to detect (optional, defaults below)
+    # Packages provided via git submodules (checked for version updates)
+    dependencies-submodules = [
+        "privatepackage",
+    ]
     index-urls = [
         "jakeogh.github.io",
         "myapps-index",
@@ -40,7 +42,6 @@ Usage in pyproject.toml:
 import os
 import shutil
 import sys
-#import tempfile
 from pathlib import Path
 
 try:
@@ -52,11 +53,16 @@ try:
     from tomlkit import dumps as toml_dumps
     from tomlkit import parse as toml_parse
 except ImportError:
-    # Fallback if tomlkit not available
     toml_parse = None
     toml_dumps = None
 
-# Import the real setuptools backend
+try:
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import version as get_installed_version
+except ImportError:
+    from importlib_metadata import version as get_installed_version
+    from importlib_metadata import PackageNotFoundError
+
 from setuptools import build_meta as _orig_backend
 
 
@@ -64,29 +70,15 @@ def _has_custom_index():
     """
     Check if a custom package index is configured.
 
-    Checks:
-    1. PIP_EXTRA_INDEX_URL environment variable
-    2. PIP_INDEX_URL environment variable
-    3. Known custom index URLs
-
     Returns:
         bool: True if custom index appears to be configured
     """
-    # Check environment variables
     extra_index = os.environ.get("PIP_EXTRA_INDEX_URL", "")
     index_url = os.environ.get("PIP_INDEX_URL", "")
 
-    # Load config to check for custom index markers
     config = _load_config()
-    index_markers = config.get(
-        "index-urls",
-        [
-            "jakeogh.github.io",
-            "pip-index",
-        ],
-    )
+    index_markers = config.get("index-urls", ["jakeogh.github.io", "pip-index"])
 
-    # Check if any marker appears in the configured URLs
     for marker in index_markers:
         if marker in extra_index or marker in index_url:
             return True
@@ -111,6 +103,68 @@ def _load_config():
     return data.get("tool", {}).get("pep508-url-version-backend", {})
 
 
+def _get_submodule_version(submodule_path):
+    """
+    Get version from a submodule's pyproject.toml.
+
+    Args:
+        submodule_path: Path to the submodule directory
+
+    Returns:
+        str: Version string or None
+    """
+    pyproject = submodule_path / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+
+    try:
+        with open(pyproject, "rb") as f:
+            data = tomllib.load(f)
+        return data.get("project", {}).get("version")
+    except Exception:
+        return None
+
+
+def _check_submodule_needs_install(package_name, submodule_path):
+    """
+    Check if a submodule package needs to be installed.
+
+    Args:
+        package_name: Name of the package
+        submodule_path: Path to the submodule directory
+
+    Returns:
+        bool: True if package needs install/update, False if already current
+    """
+    # Get version from submodule
+    submodule_version = _get_submodule_version(submodule_path)
+    if not submodule_version:
+        # Can't determine version, install to be safe
+        return True
+
+    # Check if package is installed
+    try:
+        installed_version = get_installed_version(package_name)
+    except PackageNotFoundError:
+        # Not installed, needs install
+        return True
+
+    # Compare versions
+    if installed_version != submodule_version:
+        print(
+            f"pep508_url_version_backend: {package_name} needs update: "
+            f"{installed_version} -> {submodule_version}",
+            file=sys.stderr,
+        )
+        return True
+
+    print(
+        f"pep508_url_version_backend: {package_name} already current ({installed_version})",
+        file=sys.stderr,
+    )
+    return False
+
+
 def _get_dependencies():
     """
     Get the appropriate dependencies based on index configuration.
@@ -119,18 +173,17 @@ def _get_dependencies():
         list: List of dependency strings
     """
     config = _load_config()
+    deps = []
 
     if _has_custom_index():
-        print("custom index detected, using fast-path")
-        # Fast path - use version constraints
-        deps = config.get("dependencies-indexed", [])
+        print("custom index detected, using fast-path", file=sys.stderr)
+        deps = list(config.get("dependencies-indexed", []))
         print(
             f"pep508_url_version_backend: Using indexed dependencies (fast path)",
             file=sys.stderr,
         )
     else:
-        # Slow fallback - use git URLs
-        deps = config.get("dependencies-git", [])
+        deps = list(config.get("dependencies-git", []))
         print(
             f"pep508_url_version_backend: Using git URL dependencies (slow fallback)",
             file=sys.stderr,
@@ -139,6 +192,28 @@ def _get_dependencies():
             f"pep508_url_version_backend: Tip: Set PIP_EXTRA_INDEX_URL to speed this up",
             file=sys.stderr,
         )
+
+    # Handle submodule dependencies
+    submodule_deps = config.get("dependencies-submodules", [])
+    if submodule_deps:
+        for package_name in submodule_deps:
+            # Try common submodule locations
+            submodule_path = Path(package_name)
+            if not submodule_path.exists():
+                submodule_path = Path("_vendor") / package_name
+            if not submodule_path.exists():
+                submodule_path = Path("submodules") / package_name
+
+            if submodule_path.exists() and submodule_path.is_dir():
+                if _check_submodule_needs_install(package_name, submodule_path):
+                    # Add as local path dependency
+                    deps.append(f"{package_name} @ file://{submodule_path.resolve()}")
+                # else: already installed and current, skip
+            else:
+                print(
+                    f"WARNING: Submodule {package_name} not found, skipping",
+                    file=sys.stderr,
+                )
 
     return deps
 
@@ -155,7 +230,6 @@ def _create_modified_pyproject():
     if not pyproject_path.exists():
         return pyproject_path
 
-    # Read with tomlkit to preserve formatting
     if toml_parse is None:
         print(
             "WARNING: tomlkit not available, cannot inject dependencies",
@@ -167,20 +241,16 @@ def _create_modified_pyproject():
         content = f.read()
         doc = toml_parse(content)
 
-    # Get the dependencies to inject
     deps = _get_dependencies()
 
     if not deps:
         return pyproject_path
 
-    # Inject into [project] dependencies
     if "project" not in doc:
         doc["project"] = {}
 
-    # Store original dependencies if they exist
     original_deps = doc["project"].get("dependencies", [])
 
-    # Merge: start with our injected deps, add any non-empty original deps
     merged_deps = list(deps)
     for dep in original_deps:
         if dep and dep not in merged_deps:
@@ -188,7 +258,6 @@ def _create_modified_pyproject():
 
     doc["project"]["dependencies"] = merged_deps
 
-    # Create temporary file in same directory
     temp_path = pyproject_path.with_name("pyproject.toml.tmp")
 
     with open(temp_path, "w") as f:
@@ -208,35 +277,29 @@ def _with_modified_pyproject(func):
         temp_path = None
 
         try:
-            # Create modified pyproject.toml
             temp_path = _create_modified_pyproject()
 
             if temp_path != pyproject_path:
-                # Backup original
                 shutil.copy2(pyproject_path, backup_path)
-                # Replace with modified version
                 shutil.copy2(temp_path, pyproject_path)
                 print(
-                    f"pep508_url_version_backend: Injected dependencies into pyproject.toml",
+                    "pep508_url_version_backend: Injected dependencies into pyproject.toml",
                     file=sys.stderr,
                 )
 
-            # Call the wrapped function
             result = func(*args, **kwargs)
 
             return result
 
         finally:
-            # Restore original pyproject.toml
             if backup_path.exists():
                 shutil.copy2(backup_path, pyproject_path)
                 backup_path.unlink()
                 print(
-                    f"pep508_url_version_backend: Restored original pyproject.toml",
+                    "pep508_url_version_backend: Restored original pyproject.toml",
                     file=sys.stderr,
                 )
 
-            # Clean up temp file
             if temp_path and temp_path != pyproject_path and temp_path.exists():
                 temp_path.unlink()
 
@@ -248,7 +311,6 @@ def _with_modified_pyproject(func):
 
 def get_requires_for_build_wheel(config_settings=None):
     """PEP 517 hook: Get requirements for building a wheel."""
-    # This runs early, just delegate
     return _orig_backend.get_requires_for_build_wheel(config_settings)
 
 
@@ -288,7 +350,6 @@ def build_sdist(sdist_directory, config_settings=None):
     return _orig_backend.build_sdist(sdist_directory, config_settings)
 
 
-# Optional PEP 660 hooks for editable installs
 def get_requires_for_build_editable(config_settings=None):
     """PEP 660 hook: Get requirements for editable install."""
     if hasattr(_orig_backend, "get_requires_for_build_editable"):
@@ -303,7 +364,6 @@ def prepare_metadata_for_build_editable(metadata_directory, config_settings=None
         return _orig_backend.prepare_metadata_for_build_editable(
             metadata_directory, config_settings
         )
-    # Fallback to regular wheel metadata
     return prepare_metadata_for_build_wheel(metadata_directory, config_settings)
 
 
@@ -313,11 +373,9 @@ def build_editable(
     config_settings=None,
     metadata_directory=None,
 ):
-    print("build_editable()", wheel_directory, file=sys.stderr)
     """PEP 660 hook: Build an editable wheel."""
     if hasattr(_orig_backend, "build_editable"):
         return _orig_backend.build_editable(
             wheel_directory, config_settings, metadata_directory
         )
-    # Fallback to regular wheel
     return build_wheel(wheel_directory, config_settings, metadata_directory)
