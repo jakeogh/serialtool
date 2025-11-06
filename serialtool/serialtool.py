@@ -157,7 +157,7 @@ class SerialMinimal:
             icp(self.serial_data_dir)
         serial_url = "".join(serial_url_list)
         eprint(f"{serial_url=}")
-        self.ser = serial.serial_for_url(serial_url)
+        self.ser = serial.Serial(serial_url)
         self.ser.baudrate = self.baud_rate
         self.ser.timeout = self.default_timeout
         self.ser.ctsrts = False
