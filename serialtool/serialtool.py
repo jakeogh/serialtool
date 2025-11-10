@@ -6,6 +6,8 @@ import errno
 import os
 import sys
 import time
+from dataclasses import dataclass
+from dataclasses import field
 from math import inf
 from multiprocessing import Process
 from multiprocessing import Queue
@@ -13,7 +15,6 @@ from multiprocessing import Queue as MPQueue
 from pathlib import Path
 from queue import Empty
 
-import attr
 import click
 import serial
 from asserttool import ic
@@ -109,7 +110,7 @@ def pick_serial_port() -> Path:
     return Path(port)
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class SerialMinimal:
     log_serial_data: bool
     serial_port: str
@@ -118,7 +119,7 @@ class SerialMinimal:
     hardware_buffer_size: int = 4096
     data_dir: Path = DATA_DIR
 
-    def __attrs_post_init__(self):
+    def __post_init__(self):
         ic(self.serial_port)
         self.serial_data_dir = self.data_dir / "serial_logs"
         self.serial_data_dir.mkdir(parents=True, exist_ok=True)
@@ -166,7 +167,7 @@ class SerialMinimal:
         self.ser.reset_output_buffer()
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class SerialQueue:
     rx_queue: MPQueue
     tx_queue: MPQueue
@@ -388,7 +389,7 @@ def print_serial_output(
         #    ic(type(e))
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class SerialOracle:
     baud_rate: int
     serial_data_dir: Path
@@ -396,8 +397,13 @@ class SerialOracle:
     serial_port: Path
     ipython_on_communication_error: bool
     terse: bool
+    rx_queue: Queue = field(init=False)
+    tx_queue: Queue = field(init=False)
+    rx_buffer: bytearray = field(init=False)
+    rx_buffer_cursor: int = field(init=False, default=0)
+    serial_queue_process: Process = field(init=False)
 
-    def __attrs_post_init__(self):
+    def __post_init__(self):
         self.rx_queue = Queue()
         self.tx_queue = Queue()
         self.rx_buffer = bytearray()
@@ -740,6 +746,7 @@ class SerialOracle:
             bytes_expected = b""
             assert self.rx_queue.qsize() == 0
             return
+            # return b""  # BUG FIX: was returning None implicitly
 
         if byte_count_requested == inf:  # could be 0, not raising NoResponseError
             assert False
