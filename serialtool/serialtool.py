@@ -108,6 +108,40 @@ def pick_serial_port() -> Path:
     return Path(port)
 
 
+def print_serial_oracle(
+    *,
+    serial_oracle: SerialOracle,
+    timestamp: bool,
+    read_tx_from_fifo: bool,
+    show_bytes: bool = False,
+):
+    last_queue_size = None
+    queue_size = 0
+
+    while True:
+        if gvd:
+            queue_size = serial_oracle.rx_queue.qsize()
+            if queue_size != last_queue_size:
+                ic(queue_size)
+                last_queue_size = queue_size
+        try:
+            data = serial_oracle.rx_queue.get(False)
+            data = data[0]
+            if show_bytes:
+                ic(data)
+            if timestamp:
+                _timestamp = get_timestamp()
+                data = _timestamp.encode("utf8") + b" " + data
+                if gvd:
+                    ic(data)
+            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+            if gvd:
+                ic(byte_count_written_to_stdout)
+        except Empty:
+            pass
+
+
 class SerialMinimal:
     __slots__ = (
         "log_serial_data",
