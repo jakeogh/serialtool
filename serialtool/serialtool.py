@@ -715,18 +715,18 @@ class SerialOracle:
         bytes_expected = None:
             no bytes expected to be read back
         """
-        ic(
-            byte_count_requested,
-            bytes_expected,
-            timeout,
-        )
+        #ic(
+        #    byte_count_requested,
+        #    bytes_expected,
+        #    timeout,
+        #)
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
-        if not self.terse:
-            eprint(
-                f"serialtool: read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
-            )
+        #if not self.terse:
+        #    eprint(
+        #        f"serialtool: read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
+        #    )
 
         # better to force non-specificaion of the count in the calling code
         # if bytes_expected and byte_count_requested:
@@ -763,17 +763,11 @@ class SerialOracle:
                 if (time.time() - start_time) > timeout:
                     ic("TIMEOUT", timeout)
                     raise TimeoutError(timeout)
-            ic(len(all_bytes))
+            #ic(len(all_bytes))
             return all_bytes
 
         result = b""
         start_time = time.time()
-        ic(
-            start_time,
-            timeout,
-            byte_count_requested,
-        )
-
         while len(result) < byte_count_requested:
             bytes_needed = byte_count_requested - len(result)
 
@@ -785,7 +779,7 @@ class SerialOracle:
                     pass  # the timeout will break loop
 
             if (time.time() - start_time) > timeout:
-                ic("TIMEOUT", timeout)
+                #ic("TIMEOUT", timeout)
                 raise TimeoutError(timeout)
         if progress:
             eprint(f"\ndone: {len(result)}/{byte_count_requested}\n")
@@ -795,12 +789,7 @@ class SerialOracle:
             _bits_per_second = _bytes_per_second * 8
             eprint(f"{_duration=}, {_bytes_per_second=}, {_bits_per_second=}")
 
-        if gvd:
-            ic(repr(result))  # all data
-        ic(len(result), byte_count_requested)
-        if byte_count_requested > 10:
-            if gvd:
-                icp(result[-10:])
+        #ic(len(result), byte_count_requested)
 
         if bytes_expected:
             if len(result) == 0:
