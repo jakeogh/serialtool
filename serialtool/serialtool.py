@@ -1,8 +1,23 @@
 #!/usr/bin/env python3
-# -*- coding: utf8 -*-
-
 
 from __future__ import annotations
+
+# This registers spy:// BEFORE any serial.Serial() is ever created
+try:
+    import serial.urlhandler.protocol_spy  # registers spy:// handler
+except Exception:  # pragma: no cover
+    # If pyserial-urlhandler not installed, spy:// will fail gracefully later
+    pass
+
+# Force re-register in case serial was imported early elsewhere
+try:
+    from serial.serialutil import Serial
+
+    if "spy" not in Serial.SUPPORTED_URL_PROTOCOLS:
+        serial.urlhandler.protocol_spy.register()
+except Exception:  # pragma: no cover
+    pass
+# ===================================================================
 
 import errno
 import os
@@ -11,6 +26,7 @@ import time
 from math import inf
 from multiprocessing import Process
 from multiprocessing import Queue
+from multiprocessing import Queue as MPQueue
 from pathlib import Path
 from queue import Empty
 
@@ -40,10 +56,6 @@ def construct_serial_command(
     command: bytes,
     argument: None | bytes = None,
 ):
-    # if ic.enabled:
-    #    command_name = lookup_two_byte_command_name(two_bytes=command)
-    #    ic(command, command_name)
-    #
     if argument:
         command = command + argument
 
@@ -56,8 +68,7 @@ def construct_serial_command_ack(
 ):
     if gvd:
         ic(command)
-    response = b"\x06" + command
-    return response
+    return b"\x06" + command
 
 
 def generate_serial_port_help():
@@ -65,29 +76,24 @@ def generate_serial_port_help():
     ports = list_ports.comports()
     _ports = [str(port) for port in ports]
     help_text = repr(tuple(_ports))
-    help_text.replace("\n\n", "\n")
+    help_text = help_text.replace("\n\n", "\n")
     return help_text
 
 
-def wait_for_serial_queue(
-    *,
-    serial_queue,
-    timeout: float,
-):
+def wait_for_serial_queue(*, serial_queue, timeout: float):
     ic("waiting for self.serial_queue.qsize() > 0")
-    serial_queue_start_time = time.time()
+    start = time.time()
     while True:
         if serial_queue.qsize() > 0:
             ic(serial_queue.qsize())
             break
-        if (time.time() - serial_queue_start_time) > timeout:
+        if (time.time() - start) > timeout:
             raise TimeoutError("nothing arrived in the serial_queue in time")
 
 
 def pick_serial_port() -> Path:
     ftdi_devices = ["US232R", "USB-Serial Controller"]
     ports = list_ports.comports()
-    # ic(ports)
     for port in ports:
         port_str = str(port)
         ic(port_str)
@@ -95,11 +101,11 @@ def pick_serial_port() -> Path:
             if port_str.endswith(device):
                 return Path(port_str.split(" ")[0])
 
-    # attempt to pick one with a device attached
     for port in ports:
         port_str = str(port)
         if not port_str.endswith("n/a"):
             return Path(port_str.split(" ")[0])
+
     print("")
     print("------------------------!!!!LIKELY ERROR!!!!---------------------")
     print("------------------------!!!!LIKELY ERROR!!!!---------------------")
@@ -108,11 +114,9 @@ def pick_serial_port() -> Path:
         "------------------------!!!!VERIFY USB SERIAL IS PLUGGED IN!!!!---------------------"
     )
     print(
-        "Didnt find a port with a connected FTDI device from the list:",
-        "[" + ",".join(ftdi_devices) + "]",
-        "picking the first port instead.",
-        file=sys.stderr,
+        f"Didnt find a port with a connected FTDI device from the list: {ftdi_devices}"
     )
+    print("picking the first port instead.", file=sys.stderr)
     print("")
     try:
         port = str(ports[0]).split(" ")[0]
@@ -133,36 +137,30 @@ class SerialMinimal:
 
     def __attrs_post_init__(self):
         ic(self.serial_port)
-        self.serial_data_dir = self.data_dir / Path("serial_logs")
+        self.serial_data_dir = self.data_dir / "serial_logs"
         self.serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
-        serial_data_file = self.serial_data_dir / Path(
-            timestamp + "_" + self.serial_port.split("/")[-1]
+        serial_data_file = (
+            self.serial_data_dir / f"{timestamp}_{Path(self.serial_port).name}"
         )
 
-        # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.serial_for_url
-        # https://pyserial.readthedocs.io/en/latest/url_handlers.html#urls
-        serial_url_list = ["spy://", self.serial_port]
-
-        serial_url_list.append("?file=")
+        serial_url_list = ["spy://", self.serial_port, "?file="]
         if self.log_serial_data:
             serial_url_list.append(serial_data_file.as_posix())
         else:
-            if sys.platform == "linux":
-                serial_url_list.append("/dev/null")
-            else:
-                serial_url_list.append("NUL:")
+            serial_url_list.append("/dev/null" if sys.platform == "linux" else "NUL:")
 
-        if self.log_serial_data:
-            icp(self.serial_data_dir)
         serial_url = "".join(serial_url_list)
         eprint(f"{serial_url=}")
+        icp(self.serial_data_dir) if self.log_serial_data else None
+
         self.ser = serial.Serial(serial_url)
         self.ser.baudrate = self.baud_rate
         self.ser.timeout = self.default_timeout
         self.ser.ctsrts = False
         self.ser.dsrdtr = False
         self.ser.xonxoff = False
+
         ic(
             self.ser.port,
             self.ser.baudrate,
@@ -176,13 +174,9 @@ class SerialMinimal:
             self.ser.write_timeout,
             self.ser.inter_byte_timeout,
             self.ser.exclusive,
-            self.ser,
         )
-        # ic(self.ser.read_until)
-        # ic(self.ser.nonblocking)
-        if gvd:
-            ic(dir(self.ser))
-        discard = self.ser.readall()  # self.ser.readlines() is incorrect
+
+        discard = self.ser.readall()
         if gvd:
             ic(discard)
         self.ser.reset_input_buffer()
@@ -191,9 +185,8 @@ class SerialMinimal:
 
 @attr.s(auto_attribs=True)
 class SerialQueue:
-    # https://pyserial.readthedocs.io/en/latest/pyserial_api.html
-    rx_queue: Queue
-    tx_queue: Queue
+    rx_queue: MPQueue
+    tx_queue: MPQueue
     serial_data_dir: Path
     log_serial_data: bool
     ready_signal: str
@@ -209,56 +202,29 @@ class SerialQueue:
             self.serial_port = pick_serial_port()
 
         ic(self.serial_port)
-        serial_data_dir = self.serial_data_dir / Path("serial_logs")
+        serial_data_dir = self.serial_data_dir / "serial_logs"
         serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
-        serial_data_file = serial_data_dir / Path(
-            timestamp + "_" + self.serial_port.name
-        )
+        serial_data_file = serial_data_dir / f"{timestamp}_{self.serial_port.name}"
 
-        # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.serial_for_url
-        # https://pyserial.readthedocs.io/en/latest/url_handlers.html#urls
-        serial_url_list = ["spy://", self.serial_port.as_posix()]
-
-        serial_url_list.append("?file=")
+        serial_url_list = ["spy://", self.serial_port.as_posix(), "?file="]
         if self.log_serial_data:
             serial_url_list.append(serial_data_file.as_posix())
         else:
-            if sys.platform == "linux":
-                serial_url_list.append("/dev/null")
-            else:
-                serial_url_list.append("NUL:")
+            serial_url_list.append("/dev/null" if sys.platform == "linux" else "NUL:")
 
-        if self.log_serial_data:
-            icp(self.serial_data_dir)
         serial_url = "".join(serial_url_list)
         eprint(f"{serial_url=}")
+        icp(self.serial_data_dir) if self.log_serial_data else None
+
         self.ser = serial.serial_for_url(serial_url)
         self.ser.baudrate = self.baud_rate
         self.ser.timeout = self.default_timeout
         self.ser.ctsrts = False
         self.ser.dsrdtr = False
         self.ser.xonxoff = False
-        ic(
-            self.ser.port,
-            self.ser.baudrate,
-            self.ser.bytesize,
-            self.ser.parity,
-            self.ser.stopbits,
-            self.ser.timeout,
-            self.ser.xonxoff,
-            self.ser.rtscts,
-            self.ser.dsrdtr,
-            self.ser.write_timeout,
-            self.ser.inter_byte_timeout,
-            self.ser.exclusive,
-            self.ser,
-        )
-        # ic(self.ser.read_until)
-        # ic(self.ser.nonblocking)
-        if gvd:
-            ic(dir(self.ser))
-        discard = self.ser.readall()  # self.ser.readlines() is incorrect
+
+        discard = self.ser.readall()
         if gvd:
             ic(discard)
         self.ser.reset_input_buffer()
@@ -266,53 +232,28 @@ class SerialQueue:
 
         self.rx_queue.put([self.ready_signal])
         while True:
-            # if gvd:
-            #    ic(self.ser.inWaiting())
-            # bytes_buffered = self.ser.inWaiting()
-            # if bytes_buffered == self.hardware_buffer_size:
-            #    msg = "serial hardware overflow at bytes_buffered: {bytes_buffered} and self.rx_queue.qsize()"
-            #    msg = msg.format(bytes_buffered, self.rx_queue.qsize()))
-            #    raise ValueError(msg)
-            # if bytes_buffered > (0.90 * self.hardware_buffer_size):
-            #    msg = "WARNING: bytes_buffered: {} is > 90% of hardware_buffer_size: {}".format(bytes_buffered, self.hardware_buffer_size)
-            #    print(msg, file=sys.stderr)
-            read_bytes = self.ser.read(self.ser.inWaiting())
+            read_bytes = self.ser.read(self.ser.inWaiting() or 1)
             if len(read_bytes) == self.hardware_buffer_size:
-                msg = "serial hardware overflow at hardware_buffer_size: {} and self.rx_queue.qsize: {}"
-                msg = msg.format(self.hardware_buffer_size, self.rx_queue.qsize())
-                ic(read_bytes)
-                raise ValueError(msg)
+                raise ValueError(
+                    f"serial hardware overflow: {self.hardware_buffer_size=}, {self.rx_queue.qsize()=}"
+                )
 
-            # loops constantly
-            # if gvd:
-            #    ic(read_bytes)
             if read_bytes:
                 self.rx_queue.put([read_bytes])
 
             if self.ser.inWaiting() == 0:
                 while self.tx_queue.qsize() > 0:
-                    ic(self.tx_queue.qsize())
                     try:
-                        _exit_on_list = self.tx_queue.get(False)
-                        if _exit_on_list == ["EXIT"]:
+                        item = self.tx_queue.get(False)
+                        if item == ["EXIT"]:
                             icp("got [EXIT]")
-                            # raise KeyboardInterrupt
                             sys.exit(0)
-                        _tx_data = _exit_on_list[0]
-                        # icp(_tx_data)
-                        if gvd:
-                            ic(_tx_data)
-                        _bytes_written = self.ser.write(_tx_data)
-                        assert _bytes_written == len(_tx_data)
+                        data = item[0]
+                        written = self.ser.write(data)
+                        assert written == len(data)
                         self.ser.flush()
-                        if gvd:
-                            ic("wrote:", _tx_data)
-                    except Empty as e:  # oddness.
-                        if gvd:
-                            ic(e)
-
-            # if self.ser.inWaiting() == 0:
-            #    time.sleep(0.1)
+                    except Empty:
+                        pass
 
 
 def launch_serial_queue_process(
@@ -701,7 +642,11 @@ class SerialOracle:
         echo: bool = True,
         progress: bool = False,
     ):
-        ic(command, expected_response, timeout)
+        ic(
+            command,
+            expected_response,
+            timeout,
+        )
         assert isinstance(command, bytes)
 
         if expected_response:
@@ -833,7 +778,11 @@ class SerialOracle:
 
         result = b""
         start_time = time.time()
-        ic(start_time, timeout, byte_count_requested)
+        ic(
+            start_time,
+            timeout,
+            byte_count_requested,
+        )
 
         while len(result) < byte_count_requested:
             bytes_needed = byte_count_requested - len(result)
@@ -958,7 +907,11 @@ class SerialOracle:
     default=DATA_DIR,
 )
 @click.option("--show-bytes", is_flag=True)
-@click.option("--baud-rate", type=int, default=460800)
+@click.option(
+    "--baud-rate",
+    type=int,
+    default=460800,
+)
 @click.option("--timestamp", is_flag=True)
 @click.option("--read-from-fifo", is_flag=True)
 @click.option("--log-serial-data", is_flag=True)
