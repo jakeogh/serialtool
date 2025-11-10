@@ -2,23 +2,6 @@
 
 from __future__ import annotations
 
-# This registers spy:// BEFORE any serial.Serial() is ever created
-try:
-    import serial.urlhandler.protocol_spy  # registers spy:// handler
-except Exception:  # pragma: no cover
-    # If pyserial-urlhandler not installed, spy:// will fail gracefully later
-    pass
-
-# Force re-register in case serial was imported early elsewhere
-try:
-    from serial.serialutil import Serial
-
-    if "spy" not in Serial.SUPPORTED_URL_PROTOCOLS:
-        serial.urlhandler.protocol_spy.register()
-except Exception:  # pragma: no cover
-    pass
-# ===================================================================
-
 import errno
 import os
 import sys
