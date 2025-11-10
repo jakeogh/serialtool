@@ -138,7 +138,7 @@ class SerialMinimal:
         eprint(f"{serial_url=}")
         icp(self.serial_data_dir) if self.log_serial_data else None
 
-        self.ser = serial.Serial(serial_url)
+        self.ser = serial.serial_for_url(serial_url)
         self.ser.baudrate = self.baud_rate
         self.ser.timeout = self.default_timeout
         self.ser.ctsrts = False
