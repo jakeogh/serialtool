@@ -258,7 +258,7 @@ class SerialQueue:
 
         self.rx_queue.put([self.ready_signal])
         while True:
-            read_bytes = self.ser.read(self.ser.inWaiting() or 1)
+            read_bytes = self.ser.read(self.ser.inWaiting())
             if len(read_bytes) == self.hardware_buffer_size:
                 raise ValueError(
                     f"serial hardware overflow: {self.hardware_buffer_size=}, {self.rx_queue.qsize()=}"
