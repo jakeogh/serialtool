@@ -385,7 +385,7 @@ def print_serial_output(
         sys.stdout.buffer.flush()
 
 
-class Serial:
+class SerialOracle:
     __slots__ = (
         "rx_queue",
         "tx_queue",
