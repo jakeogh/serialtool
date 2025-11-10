@@ -715,15 +715,15 @@ class SerialOracle:
         bytes_expected = None:
             no bytes expected to be read back
         """
-        #ic(
+        # ic(
         #    byte_count_requested,
         #    bytes_expected,
         #    timeout,
-        #)
+        # )
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
-        #if not self.terse:
+        # if not self.terse:
         #    eprint(
         #        f"serialtool: read_command_result() {byte_count_requested=}, {bytes_expected=}, {timeout=}"
         #    )
@@ -763,7 +763,7 @@ class SerialOracle:
                 if (time.time() - start_time) > timeout:
                     ic("TIMEOUT", timeout)
                     raise TimeoutError(timeout)
-            #ic(len(all_bytes))
+            # ic(len(all_bytes))
             return all_bytes
 
         result = b""
@@ -779,7 +779,7 @@ class SerialOracle:
                     pass  # the timeout will break loop
 
             if (time.time() - start_time) > timeout:
-                #ic("TIMEOUT", timeout)
+                # ic("TIMEOUT", timeout)
                 raise TimeoutError(timeout)
         if progress:
             eprint(f"\ndone: {len(result)}/{byte_count_requested}\n")
@@ -789,7 +789,7 @@ class SerialOracle:
             _bits_per_second = _bytes_per_second * 8
             eprint(f"{_duration=}, {_bytes_per_second=}, {_bits_per_second=}")
 
-        #ic(len(result), byte_count_requested)
+        # ic(len(result), byte_count_requested)
 
         if bytes_expected:
             if len(result) == 0:
