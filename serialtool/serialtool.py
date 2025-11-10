@@ -349,6 +349,25 @@ def launch_serial_queue_process(
     return serial_process
 
 
+def read_fifo(io_handle, length: int) -> None | bytes:
+    try:
+        buffer: None | bytes = os.read(io_handle, length)
+    except OSError as err:
+        if err.errno in {errno.EAGAIN, errno.EWOULDBLOCK}:
+            buffer = None
+        else:
+            raise
+
+    if buffer in {None, b""}:
+        pass
+    else:
+        if gvd:
+            if buffer is not None:
+                eprint(f"read_fifo() {len(buffer)=} {buffer=}")
+
+    return buffer
+
+
 def print_serial_output(
     *,
     serial_port: Path,
@@ -474,6 +493,24 @@ class SerialOracle:
                     f"serialtool: _write() writing {len(data)=} bytes to self.tx_queue: {repr(data)=}"
                 )
         self.tx_queue.put([data])
+
+    def status(self):
+        ic(self.rx_queue.qsize())
+        ic(len(self.rx_buffer))
+        ic(self.rx_buffer_bytes_available())
+
+    def rx_buffer_bytes_available(self):
+        result = len(self.rx_buffer) - self.rx_buffer_cursor
+        return result
+
+    def reset_rx(self):
+        self.rx_buffer = bytearray()
+        self.rx_buffer_cursor = 0
+        try:
+            while True:
+                self.rx_queue.get(False)[0]  # raises Empty
+        except Empty as e:
+            pass
 
     def _read(
         self,
