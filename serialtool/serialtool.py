@@ -108,40 +108,6 @@ def pick_serial_port() -> Path:
     return Path(port)
 
 
-def print_serial_oracle(
-    *,
-    serial_oracle: SerialOracle,
-    timestamp: bool,
-    read_tx_from_fifo: bool,
-    show_bytes: bool = False,
-):
-    last_queue_size = None
-    queue_size = 0
-
-    while True:
-        if gvd:
-            queue_size = serial_oracle.rx_queue.qsize()
-            if queue_size != last_queue_size:
-                ic(queue_size)
-                last_queue_size = queue_size
-        try:
-            data = serial_oracle.rx_queue.get(False)
-            data = data[0]
-            if show_bytes:
-                ic(data)
-            if timestamp:
-                _timestamp = get_timestamp()
-                data = _timestamp.encode("utf8") + b" " + data
-                if gvd:
-                    ic(data)
-            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
-            sys.stdout.buffer.flush()
-            if gvd:
-                ic(byte_count_written_to_stdout)
-        except Empty:
-            pass
-
-
 class SerialMinimal:
     __slots__ = (
         "log_serial_data",
@@ -337,16 +303,52 @@ def launch_serial_queue_process(
         baud_rate=baud_rate,
         terse=terse,
     )
-    serial_process = Process(
-        target=serial_queue.listen_serial,
-        daemon=True,
-    )
-    serial_process.start()
+    serial_queue_process = Process(target=serial_queue.listen_serial, args=())
+    serial_queue_process.start()
+    while True:
+        try:
+            ready_signal_response = rx_queue.get(False)[0]
+        except Empty:
+            continue
+        ic(ready_signal_response)
+        if ready_signal_response == ready_signal:
+            break
+        raise ValueError(ready_signal_response, ready_signal)
+    return serial_queue_process
 
-    wait_for_serial_queue(serial_queue=rx_queue, timeout=15.0)
-    ready_string = rx_queue.get(timeout=1.0)[0]
-    assert ready_string == ready_signal
-    return serial_process
+
+def print_serial_oracle(
+    *,
+    serial_oracle,
+    timestamp: bool,
+    read_tx_from_fifo: bool,
+    show_bytes: bool = False,
+):
+    last_queue_size = None
+    queue_size = 0
+
+    while True:
+        if gvd:
+            queue_size = serial_oracle.rx_queue.qsize()
+            if queue_size != last_queue_size:
+                ic(queue_size)
+                last_queue_size = queue_size
+        try:
+            data = serial_oracle.rx_queue.get(False)
+            data = data[0]
+            if show_bytes:
+                ic(data)
+            if timestamp:
+                _timestamp = get_timestamp()
+                data = _timestamp.encode("utf8") + b" " + data
+                if gvd:
+                    ic(data)
+            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+            if gvd:
+                ic(byte_count_written_to_stdout)
+        except Empty:
+            pass
 
 
 def read_fifo(io_handle, length: int) -> None | bytes:
@@ -374,125 +376,105 @@ def print_serial_output(
     serial_data_dir: Path,
     log_serial_data: bool,
     timestamp: bool,
-    show_bytes: bool,
-    baud_rate: int,
     read_tx_from_fifo: bool,
     terse: bool,
+    baud_rate: int = 460800,
+    show_bytes: bool = False,
 ):
-    if not serial_port:
-        serial_port = pick_serial_port()
-
-    icp(serial_port)
     rx_queue = Queue()
     tx_queue = Queue()
 
-    _ = launch_serial_queue_process(
+    last_queue_size = None
+    queue_size = 0
+    fifo_handle: int | None = None
+    if read_tx_from_fifo:
+        fifo_handle = os.open("/delme/fifo", os.O_RDONLY | os.O_NONBLOCK)
+    serial_queue_process = launch_serial_queue_process(
         rx_queue=rx_queue,
         tx_queue=tx_queue,
         serial_port=serial_port,
-        serial_data_dir=serial_data_dir,
         baud_rate=baud_rate,
+        serial_data_dir=serial_data_dir,
         log_serial_data=log_serial_data,
         terse=terse,
     )
-
-    if read_tx_from_fifo:
-        tx_fifo_path = DATA_DIR / "tx_fifo"
-        if not tx_fifo_path.exists():
-            os.mkfifo(tx_fifo_path.as_posix())
-        tx_fifo = os.open(tx_fifo_path.as_posix(), os.O_RDONLY | os.O_NONBLOCK)
-
     while True:
-        if read_tx_from_fifo:
-            # non-blocking
-            # https://stackoverflow.com/questions/47116027/reading-input-from-a-fifo-without-blocking
-            try:
-                data = os.read(tx_fifo, 1024)
-            except OSError as err:
-                if err.errno == errno.EAGAIN or err.errno == errno.EWOULDBLOCK:
-                    data = None
-                else:
-                    raise
-
-            if data:
-                tx_queue.put([data])
-                eprint(f"sent: {data}")
-
+        if gvd:
+            queue_size = rx_queue.qsize()
+            if queue_size != last_queue_size:
+                ic(queue_size)
+                last_queue_size = queue_size
         try:
-            line_bytes = rx_queue.get(timeout=0.1)
+            data = rx_queue.get(False)
+            data = data[0]
+            if show_bytes:
+                ic(data)
+            if timestamp:
+                _timestamp = get_timestamp()
+                data = _timestamp.encode("utf8") + b" " + data
+                if gvd:
+                    ic(data)
+            byte_count_written_to_stdout = sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+            if gvd:
+                ic(byte_count_written_to_stdout)
         except Empty:
-            continue
-
-        line_bytes = line_bytes[0]
-
-        if timestamp:
-            timestamp = get_timestamp()
-            sys.stdout.buffer.write(timestamp.encode("utf-8"))
-            sys.stdout.buffer.write(b": ")
-
-        if show_bytes:
-            sys.stdout.buffer.write(str(line_bytes).encode("utf-8"))
-        else:
-            sys.stdout.buffer.write(line_bytes)
-
-        sys.stdout.buffer.flush()
+            pass
+        if read_tx_from_fifo:
+            _result = read_fifo(io_handle=fifo_handle, length=32)
+            if _result:
+                ic(_result)
+                tx_queue.put([_result])
 
 
 class SerialOracle:
     __slots__ = (
+        "baud_rate",
+        "serial_data_dir",
+        "log_serial_data",
+        "serial_port",
+        "ipython_on_communication_error",
+        "terse",
         "rx_queue",
         "tx_queue",
-        "serial_port",
-        "serial_process",
-        "data_dir",
-        "terse",
-        "baud_rate",
-        "log_serial_data",
-        "display_communication",
-        "ipython_on_communication_error",
+        "rx_buffer",
+        "rx_buffer_cursor",
+        "serial_queue_process",
     )
 
     def __init__(
         self,
-        serial_port: Path,
+        baud_rate: int,
         serial_data_dir: Path,
+        log_serial_data: bool,
+        serial_port: Path,
+        ipython_on_communication_error: bool,
         terse: bool,
-        baud_rate: int = 460800,
-        log_serial_data: bool = False,
-        display_communication: bool = False,
-        ipython_on_communication_error: bool = False,
     ):
+        self.baud_rate = baud_rate
+        self.serial_data_dir = serial_data_dir
+        self.log_serial_data = log_serial_data
+        self.serial_port = serial_port
+        self.ipython_on_communication_error = ipython_on_communication_error
+        self.terse = terse
         self.rx_queue = Queue()
         self.tx_queue = Queue()
-        self.serial_port = serial_port
-        self.data_dir = serial_data_dir
-        self.terse = terse
-        self.baud_rate = baud_rate
-        self.log_serial_data = log_serial_data
-        self.display_communication = display_communication
-        self.ipython_on_communication_error = ipython_on_communication_error
-
-        self.serial_process = launch_serial_queue_process(
+        self.rx_buffer = bytearray()
+        self.rx_buffer_cursor = 0
+        self.serial_queue_process = launch_serial_queue_process(
             rx_queue=self.rx_queue,
             tx_queue=self.tx_queue,
             serial_port=self.serial_port,
-            serial_data_dir=self.data_dir,
-            baud_rate=self.baud_rate,
             log_serial_data=self.log_serial_data,
+            baud_rate=self.baud_rate,
+            serial_data_dir=self.serial_data_dir,
             terse=self.terse,
         )
 
-    def _write(self, data: bytes):
-        if not self.terse:
-            eprint(
-                f"serialtool: _write() writing {len(data)=} bytes to self.tx_queue: {repr(data)=}"
-            )
-        else:
-            if gvd:
-                eprint(
-                    f"serialtool: _write() writing {len(data)=} bytes to self.tx_queue: {repr(data)=}"
-                )
-        self.tx_queue.put([data])
+    def terminate(self):
+        self.serial_queue_process.terminate()
+        self.serial_queue_process.kill()
+        self.serial_queue_process.close()
 
     def status(self):
         ic(self.rx_queue.qsize())
@@ -517,141 +499,226 @@ class SerialOracle:
         *,
         count: int | float,
         progress: bool = False,
-    ) -> bytes:
-        """
-        Read count number of bytes from the serial RX queue.
-        count = inf:
-            read until manually stopped
-        """
-        read_bytes = b""
-        time_limit = 1.0
-
-        # return read_bytes
-        if not self.terse:
-            eprint(f"serialtool: _read() {count=}")
-
-        if count == 0:
-            read_bytes = b""
-        elif count == inf:
-            raise ValueError(count)
-            # eprint("_read() count == inf ERROR (todo)")
-        elif count > 0:
-            start_time = time.time()
-            while len(read_bytes) < count:
-                try:
-                    time_to_wait = min(
-                        0.1, time_limit - (time.time() - start_time)
-                    )  # time_limit == 1.0 rn
-                    queue_data = self.rx_queue.get(timeout=time_to_wait)
-                    read_bytes += queue_data[0]
-                    start_time = time.time()  # reset the timeout on new data
-                    if progress:
-                        eprint(f"{len(read_bytes)}/{count}\r", end="")
-                except Empty as e:
-                    # ic(e)
+    ):
+        if isinstance(count, float):
+            assert count == inf
+        while self.rx_buffer_bytes_available() < count:
+            try:
+                data = self.rx_queue.get(False)[0]  # raises Empty
+                self.rx_buffer.extend(data)
+            except Empty as e:
+                if count != inf:
                     raise e
-                    # print("_read() got Empty", flush=True)
-                    # pass
-        else:
-            raise ValueError(count)
-        if not self.terse:
-            if gvd:
+                if gvd:
+                    ic("got expected exception Empty, breaking")
+                break
+            if progress:
+                _len = len(self.rx_buffer)
                 eprint(
-                    f"serialtool: _read() got {len(read_bytes)} bytes: {repr(read_bytes)=}"
+                    f"{_len}/{count} {_len-count}     {int(_len/count*100)}%       ",
+                    end="\r",
                 )
-            else:
-                if len(read_bytes) < 1000:
-                    eprint(
-                        f"serialtool: _read() got {len(read_bytes)} bytes: {repr(read_bytes)=}"
-                    )
-                else:
-                    eprint(
-                        f"serialtool: _read() got {len(read_bytes)} bytes: (truncated){repr(read_bytes)[:100]=}"
-                    )
-        # ic(len(read_bytes), read_bytes)
-        return read_bytes
 
-    def send_serial_command_queued(
+        if count != inf:
+            result = self.rx_buffer[
+                self.rx_buffer_cursor : self.rx_buffer_cursor + count
+            ]
+        else:
+            result = self.rx_buffer[self.rx_buffer_cursor :]
+        if gvd:
+            ic(result)
+
+        self.rx_buffer_cursor += len(result)
+        return result
+
+    def write(self, data: bytes) -> None:
+        ic(data)
+        self.tx_queue.put([data])
+
+    def send_serial_command(
         self,
         command: bytes,
-        *,
-        byte_count_requested: None | int,
         expect_ack: bool,
-        echo: bool = True,
+        argument: None | bytes = None,
+        data_bytes_expected: int = 0,
+        byte_count_requested: bool | int = False,
+        bytes_expected=None,
         timeout: None | float = None,
+        no_read: bool = False,
+        echo: bool = True,
+        simulate: bool = False,
         progress: bool = False,
     ):
-        if not timeout:
-            timeout = inf
+        if simulate or gvd:
+            echo = True
+        ic(
+            command,
+            argument,
+            expect_ack,
+            timeout,
+        )
+        assert isinstance(command, bytes)
 
-        command = construct_serial_command(command=command)
-        ic(command, byte_count_requested)
+        if data_bytes_expected:
+            assert not byte_count_requested
+            assert byte_count_requested != inf
+            assert not bytes_expected
+            assert not no_read
 
-        if byte_count_requested == 0:
-            expected_response_bytes = None
-        else:
-            ic(command)
-            expected_response_bytes = b"\x10\x02" + command[2:4] + b"\x10\x03"
-            if expect_ack:
-                expected_response_bytes = (
-                    expected_response_bytes
-                    + b"\x06"
-                    + construct_serial_command_ack(command=command[2:4])
+        if expect_ack:
+            assert not byte_count_requested
+            assert not bytes_expected
+            assert not no_read
+            assert byte_count_requested != inf
+
+        if byte_count_requested:
+            assert not no_read
+
+        if no_read:
+            assert not byte_count_requested
+            assert byte_count_requested != inf
+        elif byte_count_requested == inf:
+            assert not no_read
+
+        _command = construct_serial_command(command=command, argument=argument)
+
+        if echo:
+            _argument_repr = repr(argument)[0:10]
+            if self.terse:
+                eprint(_command)
+            else:
+                eprint(
+                    "serialtool: send_serial_command()",
+                    f"{len(command)=}",
+                    f"{_command=}",
+                    f"{expect_ack=}",
+                    f"argument={_argument_repr}",
+                    f"{data_bytes_expected=}",
+                    f"{byte_count_requested=}",
+                    f"{bytes_expected=}",
+                    f"{timeout=}",
+                    f"{no_read=}",
+                    f"{_command.hex()=}",
                 )
 
-            byte_count_requested += len(expected_response_bytes)
-            ic(expected_response_bytes, len(expected_response_bytes))
-
-        start_time = time.time()
-        self._write(data=command)
-
-        rx_bytes = self.read_command_result(
-            byte_count_requested=byte_count_requested,
-            bytes_expected=expected_response_bytes,
-            timeout=timeout,
-            progress=progress,
+        ic(
+            _command,
+            len(_command),
+            expect_ack,
+            argument,
+            byte_count_requested,
+            bytes_expected,
+            data_bytes_expected,
+            timeout,
+            no_read,
         )
 
-        result_bytes = self.extract_command_result(
-            two_byte_command=command[2:4],
-            result=rx_bytes,
-            expect_ack=expect_ack,
-            data_bytes_expected=byte_count_requested - len(expected_response_bytes),
-        )
+        if simulate:
+            return b""
 
-        if self.display_communication:
-            if echo:
-                if self.terse:
-                    eprint(f"{repr(result_bytes)=}")
-                else:
-                    eprint(
-                        f"serialtool: send_serial_command_queued() {len(result_bytes)=} {repr(result_bytes)=}"
-                    )
-        return result_bytes
+        self.reset_rx()
+        self.write(_command)
+
+        if data_bytes_expected:
+            assert not byte_count_requested
+            byte_count_requested = 2 + data_bytes_expected + 2
+
+        if expect_ack:
+            byte_count_requested = byte_count_requested + 3
+
+        if not no_read:
+            try:
+                rx_bytes = self.read_command_result(
+                    byte_count_requested=byte_count_requested,
+                    bytes_expected=bytes_expected,
+                    timeout=timeout,
+                    progress=progress,
+                )
+            except ValueError as e:
+                ic(e)
+                raise e
+
+            rx_bytes = self.extract_command_result(
+                two_byte_command=command,
+                result=rx_bytes,
+                expect_ack=expect_ack,
+                data_bytes_expected=data_bytes_expected,
+            )
+
+            if len(rx_bytes) > 0:
+                if echo:
+                    if len(rx_bytes) > 100:
+                        if gvd:
+                            eprint(
+                                f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                            )
+                        else:
+                            if self.terse:
+                                eprint(f"{len(rx_bytes)=}")
+                            else:
+                                eprint(
+                                    f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes[:100])=}"
+                                )
+                    else:
+                        if self.terse:
+                            eprint(f"{rx_bytes=}")
+                        else:
+                            eprint(
+                                f"serialtool: send_serial_command() {len(rx_bytes)=} {repr(rx_bytes)=}"
+                            )
+            return rx_bytes
 
     def send_serial_command_direct(
         self,
         command: bytes,
-        *,
         byte_count_requested: None | int = None,
         expected_response: None | bytes = None,
-        echo: bool = True,
         timeout: None | float = None,
+        echo: bool = True,
         progress: bool = False,
     ):
-        if not timeout:
-            timeout = inf
-
-        if byte_count_requested:
-            ic(byte_count_requested)
-            assert isinstance(byte_count_requested, int)
+        ic(
+            command,
+            expected_response,
+            timeout,
+        )
+        assert isinstance(command, bytes)
 
         if expected_response:
-            ic(expected_response)
-            assert isinstance(expected_response, bytes)
+            assert byte_count_requested != inf
+            assert not byte_count_requested
 
-        start_time = time.time()
-        self._write(data=command)
+        if byte_count_requested:
+            assert not expected_response
+
+        if echo:
+            if self.terse:
+                eprint(f"{command=}")
+            else:
+                eprint(
+                    "serialtool: send_serial_command_direct()",
+                    f"{command=}",
+                    f"{len(command)=}",
+                    f"{command.hex()=}",
+                    f"{timeout=}",
+                    f"{byte_count_requested=}",
+                    end="",
+                )
+            if expected_response:
+                eprint(f" {expected_response=}", end="")
+            eprint()
+
+        ic(
+            command,
+            len(command),
+            byte_count_requested,
+            expected_response,
+            timeout,
+        )
+
+        self.reset_rx()
+        self.write(command)
+
         try:
             rx_bytes = self.read_command_result(
                 byte_count_requested=byte_count_requested,
@@ -685,11 +752,6 @@ class SerialOracle:
         timeout: None | float = None,
         progress: bool = False,
     ):
-        """
-        Reads byte_count_requested number of bytes over serial and compares it to bytes_expected if given.
-        bytes_expected = None:
-            no bytes expected to be read back
-        """
         if bytes_expected:
             assert isinstance(bytes_expected, bytes)
 
@@ -704,7 +766,7 @@ class SerialOracle:
             assert bytes_expected is None
             bytes_expected = b""
             assert self.rx_queue.qsize() == 0
-            return b""  # Fixed: was returning None implicitly
+            return b""
 
         if byte_count_requested == inf:
             assert False
