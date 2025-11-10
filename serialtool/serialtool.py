@@ -267,19 +267,19 @@ class SerialQueue:
             if read_bytes:
                 self.rx_queue.put([read_bytes])
 
-            if self.ser.inWaiting() == 0:
-                while self.tx_queue.qsize() > 0:
-                    try:
-                        item = self.tx_queue.get(False)
-                        # if item == ["EXIT"]:
-                        #    icp("got [EXIT]")
-                        #    sys.exit(0)
-                        data = item[0]
-                        written = self.ser.write(data)
-                        assert written == len(data)
-                        self.ser.flush()
-                    except Empty:
-                        pass
+            # if self.ser.inWaiting() == 0:
+            while self.tx_queue.qsize() > 0:
+                try:
+                    item = self.tx_queue.get(False)
+                    # if item == ["EXIT"]:
+                    #    icp("got [EXIT]")
+                    #    sys.exit(0)
+                    data = item[0]
+                    written = self.ser.write(data)
+                    assert written == len(data)
+                    self.ser.flush()
+                except Empty:
+                    pass
 
 
 def launch_serial_queue_process(
