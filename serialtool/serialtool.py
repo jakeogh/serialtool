@@ -425,7 +425,7 @@ class SerialOracle:
         "tx_queue",
         "serial_port",
         "serial_process",
-        "data_dir",
+        "serial_data_dir",
         "terse",
         "baud_rate",
         "log_serial_data",
@@ -436,7 +436,7 @@ class SerialOracle:
     def __init__(
         self,
         serial_port: Path,
-        data_dir: Path,
+        serial_data_dir: Path,
         terse: bool,
         baud_rate: int = 460800,
         log_serial_data: bool = False,
@@ -446,7 +446,7 @@ class SerialOracle:
         self.rx_queue = Queue()
         self.tx_queue = Queue()
         self.serial_port = serial_port
-        self.data_dir = data_dir
+        self.data_dir = serial_data_dir
         self.terse = terse
         self.baud_rate = baud_rate
         self.log_serial_data = log_serial_data
