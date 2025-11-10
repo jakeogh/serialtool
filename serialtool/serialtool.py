@@ -425,7 +425,7 @@ class SerialOracle:
         "tx_queue",
         "serial_port",
         "serial_process",
-        "serial_data_dir",
+        "data_dir",
         "terse",
         "baud_rate",
         "log_serial_data",
