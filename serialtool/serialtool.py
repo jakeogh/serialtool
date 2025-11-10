@@ -271,9 +271,9 @@ class SerialQueue:
                 while self.tx_queue.qsize() > 0:
                     try:
                         item = self.tx_queue.get(False)
-                        if item == ["EXIT"]:
-                            icp("got [EXIT]")
-                            sys.exit(0)
+                        # if item == ["EXIT"]:
+                        #    icp("got [EXIT]")
+                        #    sys.exit(0)
                         data = item[0]
                         written = self.ser.write(data)
                         assert written == len(data)
@@ -532,7 +532,7 @@ class SerialOracle:
         return result
 
     def write(self, data: bytes) -> None:
-        ic(data)
+        # ic(data)
         self.tx_queue.put([data])
 
     def send_serial_command(
