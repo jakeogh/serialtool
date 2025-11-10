@@ -853,7 +853,7 @@ class SerialOracle:
 
         if data_bytes_expected:
             assert len(result) - 4 == data_bytes_expected
-            ic(result[0:2])
+            # ic(result[0:2])
             assert result[0:2] == b"\x10\x02"
             result = result[2:]
             assert result[-2:] == b"\x10\x03"
