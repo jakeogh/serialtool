@@ -461,6 +461,8 @@ class SerialOracle:
         self.tx_queue = Queue()
         self.rx_buffer = bytearray()
         self.rx_buffer_cursor = 0
+        if not serial_port:
+            raise ValueError(f"serial_port: {serial_port} can not be None. Exiting.")
         self.serial_queue_process = launch_serial_queue_process(
             rx_queue=self.rx_queue,
             tx_queue=self.tx_queue,
