@@ -271,9 +271,10 @@ class SerialQueue:
             while self.tx_queue.qsize() > 0:
                 try:
                     item = self.tx_queue.get(False)
-                    # if item == ["EXIT"]:
-                    #    icp("got [EXIT]")
-                    #    sys.exit(0)
+                    icp(item)
+                    if item == ["EXIT"]:
+                        icp("got [EXIT]")
+                        sys.exit(0)
                     data = item[0]
                     written = self.ser.write(data)
                     assert written == len(data)
