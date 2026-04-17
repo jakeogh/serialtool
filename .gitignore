@@ -3,3 +3,6 @@
 .push
 enable_github.sh
 serialtool-9999.ebuild
+url.sh
+.pip_index
+update_delme.sh
