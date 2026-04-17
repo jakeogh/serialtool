@@ -136,7 +136,7 @@ class SerialMinimal:
         self.hardware_buffer_size = hardware_buffer_size
         self.data_dir = data_dir
 
-        ic(self.serial_port)
+        # ic(self.serial_port)
         self.serial_data_dir = self.data_dir / "serial_logs"
         self.serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
@@ -152,7 +152,7 @@ class SerialMinimal:
 
         serial_url = "".join(serial_url_list)
         eprint(f"{serial_url=}")
-        icp(self.serial_data_dir) if self.log_serial_data else None
+        # icp(self.serial_data_dir) if self.log_serial_data else None
 
         self.ser = serial.serial_for_url(serial_url)
         self.ser.baudrate = self.baud_rate
@@ -161,20 +161,20 @@ class SerialMinimal:
         self.ser.dsrdtr = False
         self.ser.xonxoff = False
 
-        ic(
-            self.ser.port,
-            self.ser.baudrate,
-            self.ser.bytesize,
-            self.ser.parity,
-            self.ser.stopbits,
-            self.ser.timeout,
-            self.ser.xonxoff,
-            self.ser.rtscts,
-            self.ser.dsrdtr,
-            self.ser.write_timeout,
-            self.ser.inter_byte_timeout,
-            self.ser.exclusive,
-        )
+        # ic(
+        #    self.ser.port,
+        #    self.ser.baudrate,
+        #    self.ser.bytesize,
+        #    self.ser.parity,
+        #    self.ser.stopbits,
+        #    self.ser.timeout,
+        #    self.ser.xonxoff,
+        #    self.ser.rtscts,
+        #    self.ser.dsrdtr,
+        #    self.ser.write_timeout,
+        #    self.ser.inter_byte_timeout,
+        #    self.ser.exclusive,
+        # )
 
         discard = self.ser.readall()
         if gvd:
@@ -226,8 +226,8 @@ class SerialQueue:
         if not self.serial_port:
             ic("No serial port specified, picking:")
             self.serial_port = pick_serial_port()
+            ic(self.serial_port)
 
-        ic(self.serial_port)
         serial_data_dir = self.serial_data_dir / "serial_logs"
         serial_data_dir.mkdir(parents=True, exist_ok=True)
         timestamp = get_int_timestamp()
@@ -241,7 +241,7 @@ class SerialQueue:
 
         serial_url = "".join(serial_url_list)
         eprint(f"{serial_url=}")
-        icp(self.serial_data_dir) if self.log_serial_data else None
+        # icp(self.serial_data_dir) if self.log_serial_data else None
 
         self.ser = serial.serial_for_url(serial_url)
         self.ser.baudrate = self.baud_rate
@@ -311,7 +311,7 @@ def launch_serial_queue_process(
             ready_signal_response = rx_queue.get(False)[0]
         except Empty:
             continue
-        ic(ready_signal_response)
+        # ic(ready_signal_response)
         if ready_signal_response == ready_signal:
             break
         raise ValueError(ready_signal_response, ready_signal)
