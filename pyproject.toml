@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "serialtool"
-version = "1!0.0.1784687140"
+version = "1!0.0.1784687386"
 description = "Common functions for serial communication"
 authors = [
     { name = "Justin Keogh", email = "github.com@v6y.net" },
@@ -36,7 +36,7 @@ serialtool = [
 ]
 
 [tool.pep508-url-version-backend]
-dependencies-indexed = ["ipython", "asserttool>=1!0.0.1784687118", "attr", "pyserial", "clicktool>=1!0.0.1784686757", "timestamptool>=1!0.0.1784686992", "eprint>=1!0.0.1784682565", "globalverbose>=1!0.0.1784686617"]
+dependencies-indexed = ["ipython", "asserttool>=1!0.0.1784687118", "attr", "pyserial", "clicktool>=1!0.0.1784686757", "timestamptool>=1!0.0.1784687374", "eprint>=1!0.0.1784682565", "globalverbose>=1!0.0.1784686617"]
 dependencies-git = [
 	"ipython",
 	"asserttool @ git+https://github.com/jakeogh/asserttool",
